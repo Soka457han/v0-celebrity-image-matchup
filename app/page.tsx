@@ -2,13 +2,6 @@ import { StarMatcher } from "@/components/star-matcher"
 import { CELEBS } from "@/lib/celebs"
 
 export default function Page() {
-  // group counts by category for the lineup section
-  const counts = CELEBS.reduce<Record<string, number>>((acc, c) => {
-    acc[c.category] = (acc[c.category] ?? 0) + 1
-    return acc
-  }, {})
-  const categories = Object.entries(counts).sort((a, b) => b[1] - a[1])
-
   // Pick a handful of well-known names to flash as a "featured" marquee
   const featured = [
     "Taylor Swift",
@@ -87,29 +80,6 @@ export default function Page() {
       {/* Matcher */}
       <section className="max-w-6xl mx-auto px-4 pb-16 md:pb-24">
         <StarMatcher />
-      </section>
-
-      {/* Pool of stars by category */}
-      <section className="max-w-6xl mx-auto px-4 pb-20">
-        <div className="flex items-end justify-between mb-6 flex-wrap gap-2">
-          <div>
-            <h2 className="font-display text-3xl md:text-4xl tracking-tight">THE LINEUP</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {CELEBS.length} icons across {categories.length} vibes. Who&apos;s your match?
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {categories.map(([cat, count]) => (
-            <div
-              key={cat}
-              className="rounded-2xl bg-card border border-border p-4 hover:border-primary/60 transition-colors flex flex-col gap-1"
-            >
-              <span className="font-display text-2xl text-primary leading-none">{count}</span>
-              <span className="text-xs tracking-widest uppercase text-foreground">{cat}</span>
-            </div>
-          ))}
-        </div>
       </section>
 
       <footer className="border-t border-border">

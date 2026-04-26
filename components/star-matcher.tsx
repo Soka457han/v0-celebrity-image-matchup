@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useRef, useState } from "react"
-import { Upload, Sparkles, RotateCcw, Loader2, Camera, ExternalLink } from "lucide-react"
+import { Upload, Sparkles, RotateCcw, Loader2, Camera } from "lucide-react"
 
 type MatchedCeleb = {
   id: string
@@ -334,22 +334,7 @@ export function StarMatcher() {
             </div>
           </div>
 
-          {/* Below-card secondary info (NOT inside the share frame) */}
-          {result.celeb.description && (
-            <p className="text-xs sm:text-sm text-muted-foreground text-center px-4 line-clamp-3 max-w-xl mx-auto">
-              {result.celeb.description}
-            </p>
-          )}
-
-          <div className="flex flex-wrap gap-3 justify-center">
-            <a
-              href={`https://en.wikipedia.org/wiki/${result.celeb.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full bg-secondary text-secondary-foreground px-5 py-3 text-sm font-medium hover:bg-muted transition-colors"
-            >
-              About {result.celeb.name.split(" ")[0]} <ExternalLink className="size-3.5" />
-            </a>
+          <div className="flex justify-center">
             <button
               onClick={reset}
               className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-bold hover:scale-[1.03] transition-transform"
