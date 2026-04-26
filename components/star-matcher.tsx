@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useRef, useState } from "react"
-import { Upload, Sparkles, RotateCcw, Loader2, Camera, ExternalLink, Download } from "lucide-react"
+import { Upload, Sparkles, RotateCcw, Loader2, Camera, ExternalLink, Download, Users } from "lucide-react"
 import { toPng } from "html-to-image"
 
 type MatchedCeleb = {
@@ -16,6 +16,7 @@ type MatchedCeleb = {
 
 type MatchResult = {
   celeb: MatchedCeleb
+  gender: "M" | "F"
   matchPercent: number
   reasoning: string
   features: string[]
@@ -30,12 +31,18 @@ export function StarMatcher() {
   const [stage, setStage] = useState<Stage>("idle")
   const [userImage, setUserImage] = useState<string | null>(null)
   const [result, setResult] = useState<MatchResult | null>(null)
+  const [otherResult, setOtherResult] = useState<MatchResult | null>(null)
+  const [activeView, setActiveView] = useState<"main" | "other">("main")
+  const [otherLoading, setOtherLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dragActive, setDragActive] = useState(false)
   const [downloading, setDownloading] = useState(false)
 
+  // Whichever match is currently displayed
+  const displayed = activeView === "other" && otherResult ? otherResult : result
+
   const downloadCard = async () => {
-    if (!cardRef.current || !result) return
+    if (!cardRef.current || !displayed) return
     setDownloading(true)
     try {
       const dataUrl = await toPng(cardRef.current, {
@@ -44,7 +51,7 @@ export function StarMatcher() {
         backgroundColor: "#0a0a0a",
       })
       const link = document.createElement("a")
-      const safeName = result.celeb.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+      const safeName = displayed.celeb.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")
       link.download = `starmatch-${safeName}.png`
       link.href = dataUrl
       link.click()
@@ -53,6 +60,28 @@ export function StarMatcher() {
       setError("Could not download image. Try screenshotting instead.")
     } finally {
       setDownloading(false)
+    }
+  }
+
+  const fetchOtherGenderMatch = async () => {
+    if (!userImage || !result || otherResult || otherLoading) return
+    setOtherLoading(true)
+    try {
+      const opposite: "M" | "F" = result.gender === "M" ? "F" : "M"
+      const res = await fetch("/api/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: userImage, forceGender: opposite, excludeId: result.celeb.id }),
+      })
+      if (!res.ok) throw new Error("Could not load opposite-gender match")
+      const data = (await res.json()) as MatchResult
+      setOtherResult(data)
+      setActiveView("other")
+    } catch (err) {
+      console.log("[v0] other-gender match error:", err)
+      setError(err instanceof Error ? err.message : "Could not load other match")
+    } finally {
+      setOtherLoading(false)
     }
   }
 
@@ -145,6 +174,8 @@ export function StarMatcher() {
   const reset = () => {
     setUserImage(null)
     setResult(null)
+    setOtherResult(null)
+    setActiveView("main")
     setError(null)
     setStage("idle")
     if (inputRef.current) inputRef.current.value = ""
@@ -244,8 +275,36 @@ export function StarMatcher() {
         </div>
       )}
 
-      {stage === "result" && result && userImage && (
+      {stage === "result" && displayed && userImage && (
         <div className="flex flex-col gap-5">
+          {/* Toggle pills — only shown once both genders are loaded */}
+          {result && otherResult && (
+            <div className="flex justify-center">
+              <div className="inline-flex items-center gap-1 p-1 rounded-full bg-card border border-border">
+                <button
+                  onClick={() => setActiveView("main")}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-colors ${
+                    activeView === "main"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {result.gender === "M" ? "Male" : "Female"} match
+                </button>
+                <button
+                  onClick={() => setActiveView("other")}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-colors ${
+                    activeView === "other"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {otherResult.gender === "M" ? "Male" : "Female"} match
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* SHARE CARD — designed to screenshot perfectly on mobile */}
           <div
             ref={cardRef}
@@ -257,7 +316,7 @@ export function StarMatcher() {
                 STAR<span className="text-primary">MATCH</span>
               </span>
               <span className="text-[10px] tracking-[0.25em] text-accent font-bold uppercase">
-                Match Confirmed
+                {activeView === "other" ? `${displayed.gender === "M" ? "Male" : "Female"} pick` : "Match Confirmed"}
               </span>
             </div>
 
@@ -267,10 +326,10 @@ export function StarMatcher() {
                 You give
               </p>
               <h2 className="font-display text-3xl sm:text-5xl md:text-6xl tracking-tight text-primary text-balance leading-[0.95]">
-                {result.celeb.name.toUpperCase()}
+                {displayed.celeb.name.toUpperCase()}
               </h2>
               <p className="text-[10px] sm:text-xs tracking-widest uppercase text-muted-foreground mt-1">
-                {result.celeb.category} energy
+                {displayed.celeb.category} energy
               </p>
             </div>
 
@@ -295,11 +354,11 @@ export function StarMatcher() {
                 {/* Match */}
                 <div className="relative rounded-2xl overflow-hidden border border-primary/40 bg-secondary">
                   <div className="relative aspect-[3/4]">
-                    {result.celeb.image ? (
+                    {displayed.celeb.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={result.celeb.image || "/placeholder.svg"}
-                        alt={result.celeb.name}
+                        src={displayed.celeb.image || "/placeholder.svg"}
+                        alt={displayed.celeb.name}
                         className="w-full h-full object-cover"
                         crossOrigin="anonymous"
                       />
@@ -313,7 +372,7 @@ export function StarMatcher() {
                       Match
                     </div>
                     <div className="absolute bottom-2 left-2 right-2 font-display text-base sm:text-2xl uppercase tracking-tight leading-none truncate">
-                      {result.celeb.name}
+                      {displayed.celeb.name}
                     </div>
                   </div>
                 </div>
@@ -324,7 +383,7 @@ export function StarMatcher() {
                 <div className="relative">
                   <div className="absolute inset-0 bg-accent/50 blur-2xl rounded-full" />
                   <div className="relative size-20 sm:size-24 md:size-28 rounded-full bg-accent text-accent-foreground flex flex-col items-center justify-center font-display border-[3px] sm:border-4 border-card shadow-xl">
-                    <span className="text-2xl sm:text-3xl md:text-4xl leading-none">{result.matchPercent}</span>
+                    <span className="text-2xl sm:text-3xl md:text-4xl leading-none">{displayed.matchPercent}</span>
                     <span className="text-[9px] sm:text-[10px] tracking-[0.2em] mt-0.5">PERCENT</span>
                   </div>
                 </div>
@@ -334,12 +393,12 @@ export function StarMatcher() {
             {/* Reasoning + features */}
             <div className="px-4 sm:px-6 pt-4 pb-4 sm:pb-5">
               <p className="text-sm sm:text-base text-foreground/90 text-pretty text-center leading-relaxed">
-                {result.reasoning}
+                {displayed.reasoning}
               </p>
 
-              {result.features.length > 0 && (
+              {displayed.features.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 justify-center mt-3">
-                  {result.features.slice(0, 6).map((f) => (
+                  {displayed.features.slice(0, 6).map((f) => (
                     <span
                       key={f}
                       className="text-[10px] sm:text-xs px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground capitalize"
@@ -357,12 +416,25 @@ export function StarMatcher() {
                 STAR<span className="text-primary">MATCH</span> · AI CELEBRITY MATCH
               </span>
               <span className="capitalize text-accent font-bold tracking-wider truncate ml-2">
-                {result.vibe}
+                {displayed.vibe}
               </span>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-3 justify-center">
+            {/* Show "see opposite-gender match" only if not yet loaded */}
+            {result && !otherResult && (
+              <button
+                onClick={fetchOtherGenderMatch}
+                disabled={otherLoading}
+                className="inline-flex items-center gap-2 rounded-full bg-secondary text-secondary-foreground px-5 py-3 text-sm font-bold hover:bg-muted transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {otherLoading ? <Loader2 className="size-4 animate-spin" /> : <Users className="size-4" />}
+                {otherLoading
+                  ? "Finding..."
+                  : `See ${result.gender === "M" ? "female" : "male"} match`}
+              </button>
+            )}
             <button
               onClick={downloadCard}
               disabled={downloading}
@@ -372,12 +444,12 @@ export function StarMatcher() {
               {downloading ? "Saving..." : "Download & share"}
             </button>
             <a
-              href={`https://en.wikipedia.org/wiki/${result.celeb.id}`}
+              href={`https://en.wikipedia.org/wiki/${displayed.celeb.id}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-secondary text-secondary-foreground px-5 py-3 text-sm font-medium hover:bg-muted transition-colors"
             >
-              About {result.celeb.name.split(" ")[0]} <ExternalLink className="size-3.5" />
+              About {displayed.celeb.name.split(" ")[0]} <ExternalLink className="size-3.5" />
             </a>
             <button
               onClick={reset}
