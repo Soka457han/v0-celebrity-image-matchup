@@ -79,7 +79,10 @@ export function StarMatcher() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: userImage, forceGender: opposite, excludeId: result.celeb.id }),
       })
-      if (!res.ok) throw new Error("Could not load opposite-gender match")
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || "Could not load opposite-gender match")
+      }
       const data = (await res.json()) as MatchResult
       setOtherResult(data)
       setActiveView("other")

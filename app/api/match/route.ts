@@ -150,7 +150,45 @@ function pickRandomCelebOfGender(gender: Gender, excludeId?: string): Celeb {
   return pool[Math.floor(Math.random() * pool.length)]
 }
 
+// In-memory rate limit log (timestamps of recent successful Groq-bound calls).
+// Keeps the app safely under the Groq free tier (30 RPM / 1000 RPD on the
+// llama-4-scout vision model) by capping at 28/min and 400/day.
+const RATE_LIMIT_PER_MINUTE = 28
+const RATE_LIMIT_PER_DAY = 400
+const ONE_MINUTE = 60 * 1000
+const ONE_DAY = 24 * 60 * 60 * 1000
+const requestLog: number[] = []
+
+function checkRateLimit(): { ok: true } | { ok: false; code: "minute" | "day" } {
+  const now = Date.now()
+  // Drop entries older than one day in-place
+  while (requestLog.length > 0 && now - requestLog[0] > ONE_DAY) {
+    requestLog.shift()
+  }
+  const inLastDay = requestLog.length
+  const inLastMinute = requestLog.filter((t) => now - t <= ONE_MINUTE).length
+  if (inLastDay >= RATE_LIMIT_PER_DAY) return { ok: false, code: "day" }
+  if (inLastMinute >= RATE_LIMIT_PER_MINUTE) return { ok: false, code: "minute" }
+  requestLog.push(now)
+  return { ok: true }
+}
+
 export async function POST(req: Request) {
+  // Enforce free-tier-friendly rate limits BEFORE doing any work.
+  const limit = checkRateLimit()
+  if (!limit.ok) {
+    return Response.json(
+      {
+        error:
+          limit.code === "day"
+            ? "Daily limit reached. Try again tomorrow..."
+            : "Too many matches right now. Wait a few seconds and try again...",
+        code: limit.code === "day" ? "rate-limit-day" : "rate-limit-minute",
+      },
+      { status: 429 },
+    )
+  }
+
   try {
     const { image, forceGender: forceGenderRaw, excludeId } = (await req.json()) as {
       image?: string
