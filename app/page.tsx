@@ -65,12 +65,13 @@ export default function Page() {
         </p>
       </section>
 
-      {/* Marquee of famous names */}
-      <section className="border-y border-border bg-card overflow-hidden mb-10">
-        <div className="flex gap-8 py-4 animate-[marquee_40s_linear_infinite] whitespace-nowrap">
+      {/* Marquee of famous names — right-to-left scroll */}
+      <section className="border-b border-border bg-card/50 backdrop-blur-sm overflow-hidden mb-10">
+        <div className="flex gap-6 py-5 animate-marquee-rtl whitespace-nowrap">
           {[...featured, ...featured].map((name, i) => (
-            <span key={i} className="font-display text-lg tracking-wider text-muted-foreground">
-              {name.toUpperCase()} <span className="text-primary mx-2">★</span>
+            <span key={i} className="font-display text-sm md:text-base tracking-wider text-muted-foreground flex items-center gap-3 shrink-0">
+              {name.toUpperCase()}
+              <span className="text-primary text-lg">★</span>
             </span>
           ))}
         </div>
