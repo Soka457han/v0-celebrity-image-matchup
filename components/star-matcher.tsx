@@ -31,25 +31,51 @@ export function StarMatcher() {
   const [error, setError] = useState<string | null>(null)
   const [dragActive, setDragActive] = useState(false)
 
+  const resizeImage = (file: File, maxDim = 768): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const scale = Math.min(1, maxDim / Math.max(img.width, img.height))
+          const w = Math.round(img.width * scale)
+          const h = Math.round(img.height * scale)
+          const canvas = document.createElement("canvas")
+          canvas.width = w
+          canvas.height = h
+          const ctx = canvas.getContext("2d")
+          if (!ctx) return reject(new Error("Canvas context unavailable"))
+          ctx.drawImage(img, 0, 0, w, h)
+          // JPEG @ 0.85 quality keeps it well under 500KB for most selfies
+          resolve(canvas.toDataURL("image/jpeg", 0.85))
+        }
+        img.onerror = () => reject(new Error("Could not read image"))
+        img.src = e.target?.result as string
+      }
+      reader.onerror = () => reject(new Error("Could not read file"))
+      reader.readAsDataURL(file)
+    })
+
   const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       setError("Please upload an image file.")
       setStage("error")
       return
     }
-    if (file.size > 8 * 1024 * 1024) {
-      setError("Image must be under 8MB.")
+    if (file.size > 15 * 1024 * 1024) {
+      setError("Image must be under 15MB.")
       setStage("error")
       return
     }
 
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string
+    try {
+      const dataUrl = await resizeImage(file, 768)
       setUserImage(dataUrl)
       setStage("preview")
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not process image")
+      setStage("error")
     }
-    reader.readAsDataURL(file)
   }
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
