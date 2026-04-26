@@ -91,7 +91,7 @@ export default function Page() {
       </section>
 
       <footer className="border-t border-border">
-        <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+        <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground text-center sm:text-left">
           <span>CELEBMATCH &copy; 2026. Photos via Wikipedia.</span>
           <span className="tracking-widest uppercase">Powered by AI Vision</span>
         </div>

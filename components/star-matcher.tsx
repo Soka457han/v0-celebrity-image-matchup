@@ -317,11 +317,11 @@ export function StarMatcher() {
             className="relative rounded-3xl overflow-hidden border border-border bg-card shadow-2xl shadow-primary/10"
           >
             {/* Branded header */}
-            <div className="flex items-center justify-between px-4 sm:px-6 pt-4 sm:pt-5 pb-3">
-              <span className="font-display text-lg sm:text-xl tracking-tight">
+            <div className="flex items-center justify-between gap-3 px-4 sm:px-6 pt-4 sm:pt-5 pb-3">
+              <span className="font-display text-base sm:text-xl tracking-tight whitespace-nowrap">
                 CELEB<span className="text-primary">MATCH</span>
               </span>
-              <span className="text-[10px] tracking-[0.25em] text-accent font-bold uppercase">
+              <span className="text-[9px] sm:text-[10px] tracking-[0.2em] sm:tracking-[0.25em] text-accent font-bold uppercase whitespace-nowrap">
                 {activeView === "other" ? `${displayed.gender === "M" ? "Male" : "Female"} pick` : "Match Confirmed"}
               </span>
             </div>
