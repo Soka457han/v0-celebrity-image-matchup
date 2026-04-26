@@ -341,11 +341,7 @@ export function StarMatcher() {
                   <div className="relative aspect-[3/4]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={userImage || "/placeholder.svg"} alt="You" className="w-full h-full object-cover" />
-                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/90 via-background/50 to-transparent" />
-                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-background/80 backdrop-blur text-[10px] sm:text-xs font-bold uppercase tracking-wider">
-                      You
-                    </div>
-                    <div className="absolute bottom-2 left-2 right-2 font-display text-lg sm:text-2xl uppercase tracking-tight leading-none">
+                    <div className="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-background/85 backdrop-blur text-[10px] sm:text-xs font-bold uppercase tracking-wider">
                       You
                     </div>
                   </div>
@@ -367,12 +363,8 @@ export function StarMatcher() {
                         No photo available
                       </div>
                     )}
-                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/90 via-background/50 to-transparent" />
-                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                    <div className="absolute top-2 right-2 px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-[10px] sm:text-xs font-bold uppercase tracking-wider">
                       Match
-                    </div>
-                    <div className="absolute bottom-2 left-2 right-2 font-display text-base sm:text-2xl uppercase tracking-tight leading-none truncate">
-                      {displayed.celeb.name}
                     </div>
                   </div>
                 </div>
