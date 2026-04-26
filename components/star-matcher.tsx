@@ -220,98 +220,139 @@ export function StarMatcher() {
       )}
 
       {stage === "result" && result && userImage && (
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col items-center text-center gap-2">
-            <span className="text-xs tracking-[0.3em] text-accent font-bold uppercase">Match Confirmed</span>
-            <h2 className="font-display text-5xl md:text-7xl tracking-tight text-balance">
-              YOU GIVE <span className="text-primary">{result.celeb.name.toUpperCase()}</span>
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-xl text-pretty">{result.reasoning}</p>
-          </div>
-
-          {/* Side by side */}
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
-            {/* User */}
-            <div className="rounded-3xl overflow-hidden border border-border bg-card">
-              <div className="relative aspect-[3/4]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={userImage || "/placeholder.svg"} alt="You" className="w-full h-full object-cover" />
-                <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-background/80 backdrop-blur text-xs font-bold uppercase tracking-wider">
-                  You
-                </div>
-              </div>
-              <div className="p-4 flex flex-wrap gap-2">
-                {result.features.map((f) => (
-                  <span
-                    key={f}
-                    className="text-xs px-3 py-1 rounded-full bg-secondary text-secondary-foreground capitalize"
-                  >
-                    {f}
-                  </span>
-                ))}
-              </div>
+        <div className="flex flex-col gap-5">
+          {/* SHARE CARD — designed to screenshot perfectly on mobile */}
+          <div className="relative rounded-3xl overflow-hidden border border-border bg-card shadow-2xl shadow-primary/10">
+            {/* Branded header */}
+            <div className="flex items-center justify-between px-4 sm:px-6 pt-4 sm:pt-5 pb-3">
+              <span className="font-display text-lg sm:text-xl tracking-tight">
+                STAR<span className="text-primary">MATCH</span>
+              </span>
+              <span className="text-[10px] tracking-[0.25em] text-accent font-bold uppercase">
+                Match Confirmed
+              </span>
             </div>
 
-            {/* Match badge */}
-            <div className="flex md:flex-col items-center justify-center gap-2 py-4 md:py-0">
-              <div className="relative">
-                <div className="absolute inset-0 bg-accent/40 blur-2xl rounded-full" />
-                <div className="relative size-28 md:size-32 rounded-full bg-accent text-accent-foreground flex flex-col items-center justify-center font-display border-4 border-background">
-                  <span className="text-4xl md:text-5xl leading-none">{result.matchPercent}</span>
-                  <span className="text-xs tracking-widest mt-1">PERCENT</span>
-                </div>
-              </div>
-              <span className="font-display text-2xl text-primary md:mt-2">MATCH</span>
+            {/* Headline */}
+            <div className="px-4 sm:px-6 pb-4 text-center">
+              <p className="text-[10px] sm:text-xs tracking-[0.3em] uppercase text-muted-foreground mb-1">
+                You give
+              </p>
+              <h2 className="font-display text-3xl sm:text-5xl md:text-6xl tracking-tight text-primary text-balance leading-[0.95]">
+                {result.celeb.name.toUpperCase()}
+              </h2>
+              <p className="text-[10px] sm:text-xs tracking-widest uppercase text-muted-foreground mt-1">
+                {result.celeb.category} energy
+              </p>
             </div>
 
-            {/* Celeb */}
-            <div className="rounded-3xl overflow-hidden border border-border bg-card">
-              <div className="relative aspect-[3/4] bg-secondary">
-                {result.celeb.image ? (
-                  // Wikipedia provides photos; using <img> avoids next/image domain config.
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={result.celeb.image || "/placeholder.svg"}
-                    alt={result.celeb.name}
-                    className="w-full h-full object-cover"
-                    crossOrigin="anonymous"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
-                    No photo available
+            {/* Two-up photos — ALWAYS side-by-side, even on small screens */}
+            <div className="relative px-3 sm:px-6">
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                {/* You */}
+                <div className="relative rounded-2xl overflow-hidden border border-border bg-secondary">
+                  <div className="relative aspect-[3/4]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={userImage || "/placeholder.svg"} alt="You" className="w-full h-full object-cover" />
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/90 via-background/50 to-transparent" />
+                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-background/80 backdrop-blur text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                      You
+                    </div>
+                    <div className="absolute bottom-2 left-2 right-2 font-display text-lg sm:text-2xl uppercase tracking-tight leading-none">
+                      You
+                    </div>
                   </div>
-                )}
-                <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider">
-                  Your Twin
+                </div>
+
+                {/* Twin */}
+                <div className="relative rounded-2xl overflow-hidden border border-primary/40 bg-secondary">
+                  <div className="relative aspect-[3/4]">
+                    {result.celeb.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={result.celeb.image || "/placeholder.svg"}
+                        alt={result.celeb.name}
+                        className="w-full h-full object-cover"
+                        crossOrigin="anonymous"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs px-2 text-center">
+                        No photo available
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/90 via-background/50 to-transparent" />
+                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                      Twin
+                    </div>
+                    <div className="absolute bottom-2 left-2 right-2 font-display text-base sm:text-2xl uppercase tracking-tight leading-none truncate">
+                      {result.celeb.name}
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="p-4 flex flex-col gap-2">
-                <div className="flex items-baseline justify-between gap-2">
-                  <h3 className="font-display text-2xl truncate">{result.celeb.name.toUpperCase()}</h3>
-                  <span className="text-[10px] tracking-widest uppercase text-muted-foreground shrink-0">
-                    {result.celeb.category}
-                  </span>
+
+              {/* Floating match badge — sits perfectly centered between the two photos */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-accent/50 blur-2xl rounded-full" />
+                  <div className="relative size-20 sm:size-24 md:size-28 rounded-full bg-accent text-accent-foreground flex flex-col items-center justify-center font-display border-[3px] sm:border-4 border-card shadow-xl">
+                    <span className="text-2xl sm:text-3xl md:text-4xl leading-none">{result.matchPercent}</span>
+                    <span className="text-[9px] sm:text-[10px] tracking-[0.2em] mt-0.5">PERCENT</span>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground capitalize">{result.vibe}</p>
-                {result.celeb.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{result.celeb.description}</p>
-                )}
-                <a
-                  href={`https://en.wikipedia.org/wiki/${result.celeb.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
-                >
-                  Read more <ExternalLink className="size-3" />
-                </a>
               </div>
+            </div>
+
+            {/* Reasoning + features */}
+            <div className="px-4 sm:px-6 pt-4 pb-4 sm:pb-5">
+              <p className="text-sm sm:text-base text-foreground/90 text-pretty text-center leading-relaxed">
+                {result.reasoning}
+              </p>
+
+              {result.features.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 justify-center mt-3">
+                  {result.features.slice(0, 6).map((f) => (
+                    <span
+                      key={f}
+                      className="text-[10px] sm:text-xs px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground capitalize"
+                    >
+                      {f}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer / brand strip */}
+            <div className="border-t border-border px-4 sm:px-6 py-3 flex items-center justify-between text-[10px] sm:text-xs">
+              <span className="font-display tracking-wider text-muted-foreground">
+                STAR<span className="text-primary">MATCH</span> · AI CELEBRITY TWIN
+              </span>
+              <span className="capitalize text-accent font-bold tracking-wider truncate ml-2">
+                {result.vibe}
+              </span>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 justify-center mt-2">
+          {/* Below-card secondary info (NOT inside the share frame) */}
+          {result.celeb.description && (
+            <p className="text-xs sm:text-sm text-muted-foreground text-center px-4 line-clamp-3 max-w-xl mx-auto">
+              {result.celeb.description}
+            </p>
+          )}
+
+          <div className="flex flex-wrap gap-3 justify-center">
+            <a
+              href={`https://en.wikipedia.org/wiki/${result.celeb.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full bg-secondary text-secondary-foreground px-5 py-3 text-sm font-medium hover:bg-muted transition-colors"
+            >
+              About {result.celeb.name.split(" ")[0]} <ExternalLink className="size-3.5" />
+            </a>
             <button
               onClick={reset}
-              className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-8 py-4 font-bold hover:scale-[1.03] transition-transform"
+              className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-bold hover:scale-[1.03] transition-transform"
             >
               <RotateCcw className="size-4" />
               Try another photo
