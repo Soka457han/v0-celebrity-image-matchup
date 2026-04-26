@@ -338,21 +338,25 @@ export function StarMatcher() {
               <div className="grid grid-cols-2 gap-2 sm:gap-4">
                 {/* You */}
                 <div className="relative rounded-2xl overflow-hidden border border-border bg-secondary">
-                  <div className="relative aspect-[3/4]">
+                  <div className="relative aspect-[4/5]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={userImage || "/placeholder.svg"} alt="You" className="w-full h-full object-cover" />
+                    <img
+                      src={userImage || "/placeholder.svg"}
+                      alt="You"
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
                 </div>
 
                 {/* Match */}
                 <div className="relative rounded-2xl overflow-hidden border border-primary/40 bg-secondary">
-                  <div className="relative aspect-[3/4]">
+                  <div className="relative aspect-[4/5]">
                     {displayed.celeb.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={displayed.celeb.image || "/placeholder.svg"}
                         alt={displayed.celeb.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-top"
                         crossOrigin="anonymous"
                       />
                     ) : (
