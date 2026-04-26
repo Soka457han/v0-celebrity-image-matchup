@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useRef, useState } from "react"
 import { Upload, Sparkles, RotateCcw, Loader2, Camera, ExternalLink, Download, Users } from "lucide-react"
-import { toPng } from "html-to-image"
+import { toBlob } from "html-to-image"
 
 type MatchedCeleb = {
   id: string
@@ -49,21 +49,49 @@ export function StarMatcher() {
     if (!node || !displayed) return
     setDownloading(true)
     try {
-      const dataUrl = await toPng(node, {
+      const blob = await toBlob(node, {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: "#0a0a0a",
         width: 720,
         height: node.offsetHeight,
       })
-      const link = document.createElement("a")
+      if (!blob) throw new Error("Could not generate image")
+
       const safeName = displayed.celeb.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")
-      link.download = `celebmatch-${safeName}.png`
-      link.href = dataUrl
+      const fileName = `celebmatch-${safeName}.png`
+      const file = new File([blob], fileName, { type: "image/png" })
+
+      // Best path on mobile + in-app browsers (Messenger, Instagram, etc.):
+      // open the native share/save sheet via the Web Share API.
+      if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: "My CelebMatch",
+            text: `I matched with ${displayed.celeb.name} on CelebMatch!`,
+          })
+          return
+        } catch (shareErr) {
+          // User cancelled — bail out silently.
+          if ((shareErr as DOMException)?.name === "AbortError") return
+          // Otherwise fall through to the download fallback below.
+        }
+      }
+
+      // Desktop / browsers that allow programmatic downloads.
+      const objectUrl = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = objectUrl
+      link.download = fileName
+      link.rel = "noopener"
+      document.body.appendChild(link)
       link.click()
+      link.remove()
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
     } catch (err) {
       console.log("[v0] download error:", err)
-      setError("Could not download image. Try screenshotting instead.")
+      setError("Could not save image. Try long-pressing the card to save it instead.")
     } finally {
       setDownloading(false)
     }
