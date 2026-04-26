@@ -341,9 +341,6 @@ export function StarMatcher() {
                   <div className="relative aspect-[3/4]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={userImage || "/placeholder.svg"} alt="You" className="w-full h-full object-cover" />
-                    <div className="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-background/85 backdrop-blur text-[10px] sm:text-xs font-bold uppercase tracking-wider">
-                      You
-                    </div>
                   </div>
                 </div>
 
@@ -363,9 +360,6 @@ export function StarMatcher() {
                         No photo available
                       </div>
                     )}
-                    <div className="absolute top-2 right-2 px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-[10px] sm:text-xs font-bold uppercase tracking-wider">
-                      Match
-                    </div>
                   </div>
                 </div>
               </div>
