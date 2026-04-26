@@ -3,7 +3,8 @@
 import type React from "react"
 
 import { useRef, useState } from "react"
-import { Upload, Sparkles, RotateCcw, Loader2, Camera, ExternalLink } from "lucide-react"
+import { Upload, Sparkles, RotateCcw, Loader2, Camera, ExternalLink, Download } from "lucide-react"
+import { toPng } from "html-to-image"
 
 type MatchedCeleb = {
   id: string
@@ -25,11 +26,35 @@ type Stage = "idle" | "preview" | "loading" | "result" | "error"
 
 export function StarMatcher() {
   const inputRef = useRef<HTMLInputElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
   const [stage, setStage] = useState<Stage>("idle")
   const [userImage, setUserImage] = useState<string | null>(null)
   const [result, setResult] = useState<MatchResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [dragActive, setDragActive] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+
+  const downloadCard = async () => {
+    if (!cardRef.current || !result) return
+    setDownloading(true)
+    try {
+      const dataUrl = await toPng(cardRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: "#0a0a0a",
+      })
+      const link = document.createElement("a")
+      const safeName = result.celeb.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+      link.download = `starmatch-${safeName}.png`
+      link.href = dataUrl
+      link.click()
+    } catch (err) {
+      console.log("[v0] download error:", err)
+      setError("Could not download image. Try screenshotting instead.")
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   const resizeImage = (file: File, maxDim = 768): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -222,7 +247,10 @@ export function StarMatcher() {
       {stage === "result" && result && userImage && (
         <div className="flex flex-col gap-5">
           {/* SHARE CARD — designed to screenshot perfectly on mobile */}
-          <div className="relative rounded-3xl overflow-hidden border border-border bg-card shadow-2xl shadow-primary/10">
+          <div
+            ref={cardRef}
+            className="relative rounded-3xl overflow-hidden border border-border bg-card shadow-2xl shadow-primary/10"
+          >
             {/* Branded header */}
             <div className="flex items-center justify-between px-4 sm:px-6 pt-4 sm:pt-5 pb-3">
               <span className="font-display text-lg sm:text-xl tracking-tight">
@@ -335,6 +363,14 @@ export function StarMatcher() {
           </div>
 
           <div className="flex flex-wrap gap-3 justify-center">
+            <button
+              onClick={downloadCard}
+              disabled={downloading}
+              className="inline-flex items-center gap-2 rounded-full bg-accent text-accent-foreground px-6 py-3 text-sm font-bold hover:scale-[1.03] transition-transform disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              {downloading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+              {downloading ? "Saving..." : "Download & share"}
+            </button>
             <a
               href={`https://en.wikipedia.org/wiki/${result.celeb.id}`}
               target="_blank"

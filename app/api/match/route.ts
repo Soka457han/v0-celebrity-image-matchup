@@ -12,6 +12,22 @@ type GroqMatch = {
   vibe?: string
 }
 
+async function urlToDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "StarMatch/1.0 (celebrity-twin-app)" },
+      cache: "no-store",
+    })
+    if (!res.ok) return null
+    const buf = await res.arrayBuffer()
+    const contentType = res.headers.get("content-type") || "image/jpeg"
+    const b64 = Buffer.from(buf).toString("base64")
+    return `data:${contentType};base64,${b64}`
+  } catch {
+    return null
+  }
+}
+
 async function fetchWikiPhoto(slug: string): Promise<{ image: string | null; description: string | null }> {
   try {
     const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(slug)}`, {
@@ -24,8 +40,13 @@ async function fetchWikiPhoto(slug: string): Promise<{ image: string | null; des
       originalimage?: { source?: string }
       description?: string
     }
+    // Prefer thumbnail (smaller, faster, plenty for share card). Fall back to original.
+    const remoteUrl = data.thumbnail?.source || data.originalimage?.source || null
+    if (!remoteUrl) return { image: null, description: data.description || null }
+    // Inline as data URL so the client can use it inside html-to-image without CORS issues.
+    const dataUrl = await urlToDataUrl(remoteUrl)
     return {
-      image: data.originalimage?.source || data.thumbnail?.source || null,
+      image: dataUrl || remoteUrl, // fall back to remote URL if inlining fails
       description: data.description || null,
     }
   } catch {
