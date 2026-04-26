@@ -63,12 +63,24 @@ export default function Page() {
 
       {/* Marquee of famous names — right-to-left scroll */}
       <section className="border-b border-border bg-card/50 backdrop-blur-sm overflow-hidden mb-10">
-        <div className="flex gap-6 py-5 animate-marquee-rtl whitespace-nowrap">
-          {[...featured, ...featured].map((name, i) => (
-            <span key={i} className="font-display text-sm md:text-base tracking-wider text-muted-foreground flex items-center gap-3 shrink-0">
-              {name.toUpperCase()}
-              <span className="text-primary text-lg">★</span>
-            </span>
+        <div className="flex w-max animate-marquee-rtl">
+          {/* Two identical halves — when first half hits -50%, second is in place for seamless loop */}
+          {[0, 1].map((half) => (
+            <ul
+              key={half}
+              aria-hidden={half === 1 ? "true" : undefined}
+              className="flex gap-6 py-5 pr-6 whitespace-nowrap shrink-0"
+            >
+              {featured.map((name, i) => (
+                <li
+                  key={`${half}-${i}`}
+                  className="font-display text-sm md:text-base tracking-wider text-muted-foreground flex items-center gap-3 shrink-0"
+                >
+                  {name.toUpperCase()}
+                  <span className="text-primary text-lg">★</span>
+                </li>
+              ))}
+            </ul>
           ))}
         </div>
       </section>
