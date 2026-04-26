@@ -114,7 +114,9 @@ Rules:
       vibe: output.vibe,
     })
   } catch (err) {
-    console.log("[v0] match error:", err)
-    return Response.json({ error: "Match failed. Try another photo." }, { status: 500 })
+    const message = err instanceof Error ? err.message : String(err)
+    console.log("[v0] match error full:", err)
+    console.log("[v0] match error message:", message)
+    return Response.json({ error: message || "Match failed. Try another photo." }, { status: 500 })
   }
 }
