@@ -1,6 +1,9 @@
 import { generateText, Output } from "ai"
+import { createGroq } from "@ai-sdk/groq"
 import * as z from "zod"
 import { CELEBS, type Celeb } from "@/lib/celebs"
+
+const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
 
 export const maxDuration = 30
 
@@ -55,7 +58,7 @@ export async function POST(req: Request) {
       .join("\n")
 
     const { output } = await generateText({
-      model: "openai/gpt-5-mini",
+      model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
       output: Output.object({ schema: matchSchema }),
       messages: [
         {
