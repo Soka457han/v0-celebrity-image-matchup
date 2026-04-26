@@ -32,9 +32,9 @@ export default function Page() {
         <div className="max-w-6xl mx-auto px-4 py-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="size-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="font-display text-primary-foreground text-lg leading-none">S</span>
+              <span className="font-display text-primary-foreground text-lg leading-none">C</span>
             </div>
-            <span className="font-display text-xl tracking-wider">STARMATCH</span>
+            <span className="font-display text-xl tracking-wider">CELEBMATCH</span>
           </div>
           <div className="hidden sm:flex items-center gap-4">
             <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
@@ -92,7 +92,7 @@ export default function Page() {
 
       <footer className="border-t border-border">
         <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-          <span>STARMATCH &copy; 2026 — Just for fun. Photos via Wikipedia.</span>
+          <span>CELEBMATCH &copy; 2026. Photos via Wikipedia.</span>
           <span className="tracking-widest uppercase">Powered by AI Vision</span>
         </div>
       </footer>

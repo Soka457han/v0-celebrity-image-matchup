@@ -313,7 +313,7 @@ export function StarMatcher() {
             {/* Branded header */}
             <div className="flex items-center justify-between px-4 sm:px-6 pt-4 sm:pt-5 pb-3">
               <span className="font-display text-lg sm:text-xl tracking-tight">
-                STAR<span className="text-primary">MATCH</span>
+                CELEB<span className="text-primary">MATCH</span>
               </span>
               <span className="text-[10px] tracking-[0.25em] text-accent font-bold uppercase">
                 {activeView === "other" ? `${displayed.gender === "M" ? "Male" : "Female"} pick` : "Match Confirmed"}
@@ -403,7 +403,7 @@ export function StarMatcher() {
             {/* Footer / brand strip */}
             <div className="border-t border-border px-4 sm:px-6 py-3 flex items-center justify-between text-[10px] sm:text-xs">
               <span className="font-display tracking-wider text-muted-foreground">
-                STAR<span className="text-primary">MATCH</span> · AI CELEBRITY MATCH
+                CELEB<span className="text-primary">MATCH</span> · AI CELEBRITY MATCH
               </span>
               <span className="capitalize text-accent font-bold tracking-wider truncate ml-2">
                 {displayed.vibe}
