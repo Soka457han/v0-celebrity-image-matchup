@@ -1,9 +1,7 @@
 import { generateText, Output } from "ai"
-import { createGroq } from "@ai-sdk/groq"
+import { groq } from "@ai-sdk/groq"
 import * as z from "zod"
 import { CELEBS, type Celeb } from "@/lib/celebs"
-
-const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
 
 export const maxDuration = 30
 
