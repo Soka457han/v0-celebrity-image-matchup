@@ -3,6 +3,7 @@ import { groq } from "@ai-sdk/groq"
 import { CELEBS, type Celeb } from "@/lib/celebs"
 
 export const maxDuration = 30
+export const dynamic = "force-dynamic"
 
 type MatchResult = {
   celebId: string
@@ -12,14 +13,16 @@ type MatchResult = {
   vibe: string
 }
 
-// Fetch real photo + Wikipedia summary for a celeb slug.
 async function fetchWikiPhoto(slug: string): Promise<{ image: string | null; description: string | null }> {
   try {
     const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(slug)}`, {
       headers: { "User-Agent": "StarMatch/1.0 (celebrity-twin-app)" },
-      next: { revalidate: 86400 },
+      cache: "no-store",
     })
-    if (!res.ok) return { image: null, description: null }
+    if (!res.ok) {
+      console.log("[v0] wiki non-ok for", slug, res.status)
+      return { image: null, description: null }
+    }
     const data = (await res.json()) as {
       thumbnail?: { source?: string }
       originalimage?: { source?: string }
@@ -27,22 +30,20 @@ async function fetchWikiPhoto(slug: string): Promise<{ image: string | null; des
     }
     const image = data.originalimage?.source || data.thumbnail?.source || null
     return { image, description: data.description || null }
-  } catch {
+  } catch (e) {
+    console.log("[v0] wiki fetch threw:", e instanceof Error ? e.message : String(e))
     return { image: null, description: null }
   }
 }
 
 function extractJSON(text: string): MatchResult | null {
-  // Strip markdown fences if present
   const cleaned = text
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/```\s*$/i, "")
     .trim()
-  // Try direct parse first
   try {
     return JSON.parse(cleaned) as MatchResult
   } catch {}
-  // Fallback: find first { ... } block
   const match = cleaned.match(/\{[\s\S]*\}/)
   if (match) {
     try {
@@ -53,7 +54,6 @@ function extractJSON(text: string): MatchResult | null {
 }
 
 function deterministicFallback(): MatchResult {
-  // Pick a varied random celeb so users don't always see the same fallback.
   const celeb = CELEBS[Math.floor(Math.random() * CELEBS.length)]
   return {
     celebId: celeb.id,
@@ -65,21 +65,26 @@ function deterministicFallback(): MatchResult {
 }
 
 export async function POST(req: Request) {
+  console.log("[v0] match route: ENTER")
   try {
-    const { image } = (await req.json()) as { image: string }
+    const body = (await req.json()) as { image?: string }
+    const image = body.image
+    console.log("[v0] match route: got image, length =", image?.length ?? 0)
 
     if (!image || typeof image !== "string") {
       return Response.json({ error: "Missing image" }, { status: 400 })
     }
 
-    // Use a randomized 100-celeb subset each call so prompt is small AND results vary.
-    const shuffled = [...CELEBS].sort(() => Math.random() - 0.5).slice(0, 100)
+    const shuffled = [...CELEBS].sort(() => Math.random() - 0.5).slice(0, 80)
     const celebList = shuffled.map((c) => `${c.id} | ${c.name}`).join("\n")
+    console.log("[v0] match route: built celeb list, count =", shuffled.length)
 
     let parsed: MatchResult | null = null
+    let modelText = ""
 
     try {
-      const { text } = await generateText({
+      console.log("[v0] match route: calling Groq...")
+      const result = await generateText({
         model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
         messages: [
           {
@@ -93,12 +98,10 @@ Return ONLY a raw JSON object (no markdown, no commentary) with this exact shape
 {
   "celebId": "<id from list>",
   "matchPercent": <integer 70-95>,
-  "reasoning": "<one playful Gen-Z sentence, lowercase, max 20 words. say they 'give X energy' — never claim they ARE the celeb. never mention race or ethnicity.>",
+  "reasoning": "<one playful Gen-Z sentence, lowercase, max 20 words. say they 'give X energy'>",
   "features": ["<feature 1>", "<feature 2>", "<feature 3>"],
-  "vibe": "<2-4 word vibe of the celeb>"
-}
-
-Return ONLY the JSON. No explanation. No markdown fences.`,
+  "vibe": "<2-4 word vibe>"
+}`,
           },
           {
             role: "user",
@@ -109,32 +112,33 @@ Return ONLY the JSON. No explanation. No markdown fences.`,
           },
         ],
       })
-
-      console.log("[v0] raw model output:", text.slice(0, 500))
-      parsed = extractJSON(text)
+      modelText = result.text || ""
+      console.log("[v0] match route: Groq returned, text length =", modelText.length)
+      console.log("[v0] match route: model text preview =", modelText.slice(0, 300))
+      parsed = extractJSON(modelText)
+      console.log("[v0] match route: parsed =", parsed ? `celebId=${parsed.celebId}` : "null")
     } catch (modelErr) {
       const msg = modelErr instanceof Error ? modelErr.message : String(modelErr)
-      console.log("[v0] model call failed:", msg)
+      console.log("[v0] match route: Groq call FAILED:", msg)
     }
 
-    // If model failed or returned unparseable output, use fallback
     if (!parsed) {
-      console.log("[v0] using deterministic fallback")
+      console.log("[v0] match route: using fallback")
       parsed = deterministicFallback()
     }
 
-    // Resolve celeb — if model returned an unknown id, fall back to a random one
     let celeb: Celeb =
       CELEBS.find((c) => c.id === parsed!.celebId) ||
-      CELEBS.find((c) => c.name.toLowerCase() === parsed!.celebId.toLowerCase()) ||
+      CELEBS.find((c) => c.name.toLowerCase() === String(parsed!.celebId).toLowerCase()) ||
       CELEBS[Math.floor(Math.random() * CELEBS.length)]
 
-    // Fetch real photo from Wikipedia
-    let { image: celebImage, description } = await fetchWikiPhoto(celeb.id)
+    console.log("[v0] match route: resolved celeb =", celeb.id)
 
-    // Try a few alternates if photo missing
+    let { image: celebImage, description } = await fetchWikiPhoto(celeb.id)
+    console.log("[v0] match route: wiki photo =", celebImage ? "found" : "MISSING")
+
     if (!celebImage) {
-      const alternates = ["Zendaya", "Timothée_Chalamet", "Rihanna", "Taylor_Swift", "Beyoncé"]
+      const alternates = ["Zendaya", "Timothée_Chalamet", "Rihanna", "Taylor_Swift", "Beyoncé", "Harry_Styles"]
       for (const alt of alternates) {
         const fb = CELEBS.find((c) => c.id === alt)
         if (!fb) continue
@@ -148,22 +152,30 @@ Return ONLY the JSON. No explanation. No markdown fences.`,
       }
     }
 
-    return Response.json({
+    const responseBody = {
       celeb: {
         id: celeb.id,
         name: celeb.name,
         category: celeb.category,
         image: celebImage,
-        description: description || parsed.vibe,
+        description: description || parsed.vibe || null,
       },
       matchPercent: Math.max(70, Math.min(95, parsed.matchPercent || 82)),
-      reasoning: parsed.reasoning,
-      features: parsed.features?.length ? parsed.features.slice(0, 5) : ["unique vibe", "main character", "iconic"],
+      reasoning: parsed.reasoning || `you're giving major ${celeb.name} energy`,
+      features:
+        Array.isArray(parsed.features) && parsed.features.length
+          ? parsed.features.slice(0, 5)
+          : ["unique vibe", "main character", "iconic"],
       vibe: parsed.vibe || "iconic energy",
-    })
+    }
+
+    console.log("[v0] match route: SUCCESS, returning", celeb.name)
+    return Response.json(responseBody)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    console.log("[v0] match error:", message)
-    return Response.json({ error: message || "Match failed. Try another photo." }, { status: 500 })
+    const stack = err instanceof Error ? err.stack : ""
+    console.log("[v0] match route: TOP-LEVEL ERROR:", message)
+    console.log("[v0] match route: stack:", stack)
+    return Response.json({ error: message || "Match failed" }, { status: 500 })
   }
 }
