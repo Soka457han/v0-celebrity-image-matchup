@@ -372,9 +372,9 @@ export function StarMatcher() {
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
                 <div className="relative">
                   <div className="absolute inset-0 bg-accent/50 blur-2xl rounded-full" />
-                  <div className="relative size-20 sm:size-24 md:size-28 rounded-full bg-accent text-accent-foreground flex flex-col items-center justify-center font-display border-[3px] sm:border-4 border-card shadow-xl">
-                    <span className="text-2xl sm:text-3xl md:text-4xl leading-none">{displayed.matchPercent}</span>
-                    <span className="text-[9px] sm:text-[10px] tracking-[0.2em] mt-0.5">PERCENT</span>
+                  <div className="relative size-14 sm:size-20 md:size-24 lg:size-28 rounded-full bg-accent text-accent-foreground flex flex-col items-center justify-center font-display border-2 sm:border-[3px] md:border-4 border-card shadow-xl">
+                    <span className="text-base sm:text-2xl md:text-3xl lg:text-4xl leading-none">{displayed.matchPercent}</span>
+                    <span className="text-[7px] sm:text-[9px] md:text-[10px] tracking-[0.18em] mt-0.5">PERCENT</span>
                   </div>
                 </div>
               </div>
