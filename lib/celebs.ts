@@ -1,9 +1,65 @@
 // 500+ celebrity database. The `id` is the Wikipedia slug used to fetch
 // real photos at runtime from the public Wikipedia REST API.
+export type Gender = "M" | "F"
+
 export type Celeb = {
   id: string // wikipedia slug (e.g. "Taylor_Swift")
   name: string
   category: string
+}
+
+// Female celebs that don't have category "Actress". Anyone NOT in this set
+// (and NOT category "Actress") is treated as male. Categories "Actor" / "Actress"
+// derive gender directly from the category.
+const FEMALE_IDS = new Set<string>([
+  // Music — pop / R&B / hip-hop / indie / country
+  "Taylor_Swift", "Beyoncé", "Rihanna", "Adele", "Ariana_Grande", "Selena_Gomez",
+  "Demi_Lovato", "Miley_Cyrus", "Britney_Spears", "Christina_Aguilera", "Lady_Gaga",
+  "Pink_(singer)", "Kelly_Clarkson", "Katy_Perry", "Mariah_Carey", "Jennifer_Lopez",
+  "Madonna", "Cher", "Janet_Jackson", "Tina_Turner", "Diana_Ross", "Shakira",
+  "Camila_Cabello", "Dua_Lipa", "Sabrina_Carpenter", "Olivia_Rodrigo", "Billie_Eilish",
+  "Lorde", "SZA", "Doja_Cat", "Megan_Thee_Stallion", "Cardi_B", "Nicki_Minaj",
+  "Lana_Del_Rey", "Halsey_(singer)", "Tate_McRae", "Charli_XCX", "Chappell_Roan",
+  "Gracie_Abrams", "Reneé_Rapp", "Phoebe_Bridgers", "Mitski", "Karol_G", "Rosalía",
+  "Anitta_(singer)", "Stevie_Nicks", "Joan_Jett", "Gwen_Stefani", "Alanis_Morissette",
+  "Sheryl_Crow", "Avril_Lavigne", "Hayley_Williams", "Florence_Welch", "Whitney_Houston",
+  "Amy_Winehouse", "Norah_Jones", "Alicia_Keys", "Solange_Knowles", "H.E.R.",
+  "Jhené_Aiko", "Summer_Walker", "Kehlani", "Lizzo", "Meghan_Trainor", "Bebe_Rexha",
+  "Alessia_Cara", "Latto_(rapper)", "GloRilla", "Ice_Spice", "Coi_Leray", "Saweetie",
+  "Flo_Milli", "Tierra_Whack", "Little_Simz", "Janelle_Monáe", "Dolly_Parton",
+  "Carrie_Underwood", "Miranda_Lambert", "Kacey_Musgraves", "Maren_Morris", "Faith_Hill",
+  // K-Pop women
+  "Jisoo", "Jennie_(singer)", "Rosé_(singer)", "Lisa_(rapper)", "IU_(singer)", "Karina_(singer)",
+  // Athletes
+  "Serena_Williams", "Venus_Williams", "Naomi_Osaka", "Coco_Gauff", "Iga_Świątek",
+  "Aryna_Sabalenka", "Simone_Biles", "Sha'Carri_Richardson", "Becky_Lynch",
+  "Charlotte_Flair", "Ronda_Rousey",
+  // Models / Reality / Influencers
+  "Gigi_Hadid", "Bella_Hadid", "Kendall_Jenner", "Hailey_Bieber", "Emily_Ratajkowski",
+  "Adriana_Lima", "Alessandra_Ambrosio", "Tyra_Banks", "Heidi_Klum", "Naomi_Campbell",
+  "Cindy_Crawford", "Kate_Moss", "Linda_Evangelista", "Christy_Turlington",
+  "Claudia_Schiffer", "Karlie_Kloss", "Winnie_Harlow", "Ashley_Graham", "Iman_(model)",
+  "Joan_Smalls", "Liu_Wen", "Chrissy_Teigen", "Cara_Delevingne", "Kaia_Gerber",
+  "Kim_Kardashian", "Khloé_Kardashian", "Kourtney_Kardashian", "Kris_Jenner",
+  "Kylie_Jenner", "Paris_Hilton", "Nicole_Richie", "Lauren_Conrad", "Heidi_Montag",
+  "Liza_Koshy", "Emma_Chamberlain", "Addison_Rae", "Charli_D'Amelio", "Dixie_D'Amelio",
+  // Comedians / Hosts / News
+  "Amy_Schumer", "Tina_Fey", "Amy_Poehler", "Sarah_Silverman", "Oprah_Winfrey",
+  "Ellen_DeGeneres", "Gayle_King", "Hoda_Kotb",
+  // Directors / Designers / Royals / Politicians / Lifestyle
+  "Greta_Gerwig", "Sofia_Coppola", "Ava_DuVernay", "Anna_Wintour", "Donatella_Versace",
+  "Catherine,_Princess_of_Wales", "Meghan,_Duchess_of_Sussex", "Michelle_Obama",
+  "Martha_Stewart",
+  // Bollywood
+  "Deepika_Padukone", "Priyanka_Chopra", "Aishwarya_Rai", "Kareena_Kapoor",
+  "Katrina_Kaif", "Anushka_Sharma", "Alia_Bhatt", "Shraddha_Kapoor", "Sara_Ali_Khan",
+  "Janhvi_Kapoor", "Kiara_Advani", "Rashmika_Mandanna", "Samantha_Ruth_Prabhu",
+])
+
+export function getCelebGender(celeb: Celeb): Gender {
+  if (celeb.category === "Actress") return "F"
+  if (celeb.category === "Actor") return "M"
+  return FEMALE_IDS.has(celeb.id) ? "F" : "M"
 }
 
 export const CELEBS: Celeb[] = [

@@ -1,9 +1,10 @@
-import { CELEBS, type Celeb } from "@/lib/celebs"
+import { CELEBS, getCelebGender, type Celeb, type Gender } from "@/lib/celebs"
 
 export const maxDuration = 30
 export const dynamic = "force-dynamic"
 
 type GroqMatch = {
+  detectedGender?: "male" | "female"
   celebId?: string
   matchPercent?: number
   reasoning?: string
@@ -53,13 +54,16 @@ async function callGroqVision(imageDataUrl: string, celebList: string): Promise<
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) return null
 
-  const systemPrompt = `You are a fun celebrity look-alike matcher. Pick ONE celebrity from this list whose face/vibe most resembles the person in the photo.
+  const systemPrompt = `You are a fun celebrity look-alike matcher.
 
-CELEBRITIES (use the id BEFORE the pipe):
+STEP 1: Look at the photo and determine the apparent gender presentation of the person ("male" or "female").
+STEP 2: Pick ONE celebrity from the list whose face/vibe most resembles them. The celebrity's gender (shown in brackets) MUST match the gender you detected in step 1. NEVER cross-match — males match to males, females match to females.
+
+CELEBRITIES (format is "id | name [gender]"):
 ${celebList}
 
 Respond with ONLY a raw JSON object, no markdown, no commentary:
-{"celebId":"<id>","matchPercent":<70-95>,"reasoning":"<lowercase Gen-Z sentence about their vibe>","features":["feature1","feature2","feature3"],"vibe":"<2-4 word vibe>"}`
+{"detectedGender":"male|female","celebId":"<id>","matchPercent":<70-95>,"reasoning":"<lowercase Gen-Z sentence about their vibe>","features":["feature1","feature2","feature3"],"vibe":"<2-4 word vibe>"}`
 
   try {
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -75,7 +79,10 @@ Respond with ONLY a raw JSON object, no markdown, no commentary:
           {
             role: "user",
             content: [
-              { type: "text", text: "Match this person to their celebrity twin. Return only JSON." },
+              {
+                type: "text",
+                text: "Match this person to their celebrity twin of the SAME gender. Return only JSON.",
+              },
               { type: "image_url", image_url: { url: imageDataUrl } },
             ],
           },
@@ -103,19 +110,9 @@ Respond with ONLY a raw JSON object, no markdown, no commentary:
   }
 }
 
-function pickRandomCeleb(): Celeb {
-  return CELEBS[Math.floor(Math.random() * CELEBS.length)]
-}
-
-function fallbackMatch(): GroqMatch {
-  const c = pickRandomCeleb()
-  return {
-    celebId: c.id,
-    matchPercent: 78 + Math.floor(Math.random() * 15),
-    reasoning: `you're giving major ${c.name} energy — the resemblance is uncanny`,
-    features: ["expressive eyes", "strong bone structure", "main character vibes"],
-    vibe: "iconic energy",
-  }
+function pickRandomCelebOfGender(gender: Gender): Celeb {
+  const pool = CELEBS.filter((c) => getCelebGender(c) === gender)
+  return pool[Math.floor(Math.random() * pool.length)]
 }
 
 export async function POST(req: Request) {
@@ -126,37 +123,57 @@ export async function POST(req: Request) {
       return Response.json({ error: "No image provided" }, { status: 400 })
     }
 
-    // Shuffle a subset to keep the prompt small and add variety
-    const shuffled = [...CELEBS].sort(() => Math.random() - 0.5).slice(0, 80)
-    const celebList = shuffled.map((c) => `${c.id} | ${c.name}`).join("\n")
+    // Build a balanced shuffled subset: ~40 male + ~40 female so the AI has
+    // strong candidates of both genders to choose from.
+    const males = CELEBS.filter((c) => getCelebGender(c) === "M").sort(() => Math.random() - 0.5).slice(0, 40)
+    const females = CELEBS.filter((c) => getCelebGender(c) === "F").sort(() => Math.random() - 0.5).slice(0, 40)
+    const candidates = [...males, ...females].sort(() => Math.random() - 0.5)
+    const celebList = candidates
+      .map((c) => `${c.id} | ${c.name} [${getCelebGender(c) === "M" ? "male" : "female"}]`)
+      .join("\n")
 
     let match = await callGroqVision(image, celebList)
+
+    // Determine the detected gender (default M if missing)
+    const detectedGender: Gender = match?.detectedGender === "female" ? "F" : "M"
+
     if (!match || !match.celebId) {
-      console.log("[v0] using fallback match")
-      match = fallbackMatch()
+      console.log("[v0] using gender-aware fallback match")
+      const c = pickRandomCelebOfGender(detectedGender)
+      match = {
+        detectedGender: detectedGender === "F" ? "female" : "male",
+        celebId: c.id,
+        matchPercent: 78 + Math.floor(Math.random() * 15),
+        reasoning: `you're giving major ${c.name} energy — the resemblance is uncanny`,
+        features: ["expressive eyes", "strong bone structure", "main character vibes"],
+        vibe: "iconic energy",
+      }
     }
 
-    // Resolve the celeb — try exact id, then case-insensitive id, then name, else random
+    // Resolve the celeb
     let celeb: Celeb | undefined =
       CELEBS.find((c) => c.id === match!.celebId) ||
       CELEBS.find((c) => c.id.toLowerCase() === String(match!.celebId).toLowerCase()) ||
       CELEBS.find((c) => c.name.toLowerCase() === String(match!.celebId).toLowerCase())
 
-    if (!celeb) celeb = pickRandomCeleb()
+    // Enforce same-gender: if AI picked a celeb of the opposite gender, override
+    if (!celeb || getCelebGender(celeb) !== detectedGender) {
+      console.log("[v0] gender mismatch or unknown celeb — picking same-gender fallback")
+      celeb = pickRandomCelebOfGender(detectedGender)
+    }
 
     // Fetch wiki photo — never block on failure
     let { image: celebImage, description } = await fetchWikiPhoto(celeb.id)
 
-    // If no photo, try a couple of alternates so we always have something visual
+    // If no photo, try same-gender alternates so we always have something visual
     if (!celebImage) {
-      const alternates = ["Zendaya", "Rihanna", "Taylor_Swift", "Beyoncé", "Harry_Styles", "Timothée_Chalamet"]
+      const alternates: Celeb[] = CELEBS.filter((c) => getCelebGender(c) === detectedGender && c.id !== celeb!.id)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 6)
       for (const alt of alternates) {
-        if (alt === celeb.id) continue
-        const fb = CELEBS.find((c) => c.id === alt)
-        if (!fb) continue
-        const data = await fetchWikiPhoto(alt)
+        const data = await fetchWikiPhoto(alt.id)
         if (data.image) {
-          celeb = fb
+          celeb = alt
           celebImage = data.image
           description = data.description
           break
@@ -182,9 +199,8 @@ export async function POST(req: Request) {
     })
   } catch (err) {
     console.log("[v0] top-level error:", err instanceof Error ? err.message : String(err))
-    // Even on total failure, return a fallback match instead of 500
-    const fb = fallbackMatch()
-    const celeb = CELEBS.find((c) => c.id === fb.celebId) || pickRandomCeleb()
+    // Last-resort fallback — random male match (no gender info available)
+    const celeb = pickRandomCelebOfGender("M")
     const { image: celebImage, description } = await fetchWikiPhoto(celeb.id)
     return Response.json({
       celeb: {
@@ -194,10 +210,10 @@ export async function POST(req: Request) {
         image: celebImage,
         description: description || null,
       },
-      matchPercent: fb.matchPercent || 80,
-      reasoning: fb.reasoning || `you're giving major ${celeb.name} energy`,
-      features: fb.features || ["mysterious", "iconic", "main character"],
-      vibe: fb.vibe || "iconic energy",
+      matchPercent: 80,
+      reasoning: `you're giving major ${celeb.name} energy`,
+      features: ["mysterious", "iconic", "main character"],
+      vibe: "iconic energy",
     })
   }
 }
