@@ -15,8 +15,8 @@ const anton = Anton({
 })
 
 export const metadata: Metadata = {
-  title: 'STARMATCH — Find Your Celebrity Twin',
-  description: 'Upload a selfie and discover which celebrity you give the energy of. AI-powered, just for fun.',
+  title: 'STARMATCH — Find Your Celebrity Match',
+  description: 'Upload a selfie and discover which celebrity you match. AI-powered, just for fun.',
   generator: 'v0.app',
 }
 

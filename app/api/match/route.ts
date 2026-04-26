@@ -102,7 +102,7 @@ Respond with ONLY a raw JSON object, no markdown, no commentary:
             content: [
               {
                 type: "text",
-                text: "Match this person to their celebrity twin of the SAME gender. Return only JSON.",
+                text: "Match this person to their celebrity match of the SAME gender. Return only JSON.",
               },
               { type: "image_url", image_url: { url: imageDataUrl } },
             ],

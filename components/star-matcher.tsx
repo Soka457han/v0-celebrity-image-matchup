@@ -178,7 +178,7 @@ export function StarMatcher() {
           <div className="flex flex-col gap-2">
             <h2 className="font-display text-4xl md:text-6xl tracking-tight text-balance">DROP YOUR SELFIE</h2>
             <p className="text-muted-foreground text-base md:text-lg max-w-md">
-              Upload a clear photo and our AI will find your celebrity twin in seconds.
+              Upload a clear photo and our AI will find your celebrity match in seconds.
             </p>
           </div>
           <div className="flex items-center gap-2 mt-2">
@@ -198,7 +198,7 @@ export function StarMatcher() {
           </div>
           <div className="text-center flex flex-col gap-2">
             <h3 className="font-display text-3xl md:text-4xl">LOOKING GOOD.</h3>
-            <p className="text-muted-foreground">Ready to meet your celebrity twin?</p>
+            <p className="text-muted-foreground">Ready to meet your celebrity match?</p>
           </div>
           <div className="flex flex-wrap gap-3 justify-center">
             <button
@@ -206,7 +206,7 @@ export function StarMatcher() {
               className="group inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-8 py-4 font-bold text-lg hover:scale-[1.03] transition-transform"
             >
               <Sparkles className="size-5 group-hover:rotate-12 transition-transform" />
-              Find My Twin
+              Find My Match
             </button>
             <button
               onClick={reset}
@@ -232,7 +232,7 @@ export function StarMatcher() {
             <span className="font-display text-2xl md:text-3xl tracking-wide">SCANNING THE STARS...</span>
           </div>
           <div className="flex flex-wrap gap-2 justify-center max-w-md">
-            {["analyzing features", "scanning 1000+ celebs", "finding your twin"].map((t) => (
+            {["analyzing features", "scanning 1000+ celebs", "finding your match"].map((t) => (
               <span
                 key={t}
                 className="text-xs uppercase tracking-wider px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground"
@@ -292,7 +292,7 @@ export function StarMatcher() {
                   </div>
                 </div>
 
-                {/* Twin */}
+                {/* Match */}
                 <div className="relative rounded-2xl overflow-hidden border border-primary/40 bg-secondary">
                   <div className="relative aspect-[3/4]">
                     {result.celeb.image ? (
@@ -310,7 +310,7 @@ export function StarMatcher() {
                     )}
                     <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/90 via-background/50 to-transparent" />
                     <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] sm:text-xs font-bold uppercase tracking-wider">
-                      Twin
+                      Match
                     </div>
                     <div className="absolute bottom-2 left-2 right-2 font-display text-base sm:text-2xl uppercase tracking-tight leading-none truncate">
                       {result.celeb.name}
@@ -354,7 +354,7 @@ export function StarMatcher() {
             {/* Footer / brand strip */}
             <div className="border-t border-border px-4 sm:px-6 py-3 flex items-center justify-between text-[10px] sm:text-xs">
               <span className="font-display tracking-wider text-muted-foreground">
-                STAR<span className="text-primary">MATCH</span> · AI CELEBRITY TWIN
+                STAR<span className="text-primary">MATCH</span> · AI CELEBRITY MATCH
               </span>
               <span className="capitalize text-accent font-bold tracking-wider truncate ml-2">
                 {result.vibe}
