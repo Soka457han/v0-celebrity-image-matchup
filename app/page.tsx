@@ -1,8 +1,38 @@
-import Image from "next/image"
 import { StarMatcher } from "@/components/star-matcher"
 import { CELEBS } from "@/lib/celebs"
 
 export default function Page() {
+  // group counts by category for the lineup section
+  const counts = CELEBS.reduce<Record<string, number>>((acc, c) => {
+    acc[c.category] = (acc[c.category] ?? 0) + 1
+    return acc
+  }, {})
+  const categories = Object.entries(counts).sort((a, b) => b[1] - a[1])
+
+  // Pick a handful of well-known names to flash as a "featured" marquee
+  const featured = [
+    "Taylor Swift",
+    "Zendaya",
+    "Bad Bunny",
+    "Timothée Chalamet",
+    "Beyoncé",
+    "Dua Lipa",
+    "LeBron James",
+    "Margot Robbie",
+    "Harry Styles",
+    "Rihanna",
+    "Pedro Pascal",
+    "Sabrina Carpenter",
+    "Drake",
+    "Sydney Sweeney",
+    "Cristiano Ronaldo",
+    "Olivia Rodrigo",
+    "Ryan Gosling",
+    "Billie Eilish",
+    "Shah Rukh Khan",
+    "Jennifer Lawrence",
+  ]
+
   return (
     <main className="min-h-dvh bg-background text-foreground">
       {/* Header */}
@@ -14,15 +44,20 @@ export default function Page() {
             </div>
             <span className="font-display text-xl tracking-wider">STARMATCH</span>
           </div>
-          <div className="hidden sm:flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-accent animate-pulse" />
-            AI Powered
+          <div className="hidden sm:flex items-center gap-4">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+              <span className="size-1.5 rounded-full bg-accent animate-pulse" />
+              AI Powered
+            </div>
+            <div className="text-xs uppercase tracking-widest text-foreground font-bold">
+              {CELEBS.length}+ stars
+            </div>
           </div>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-4 pt-12 md:pt-20 pb-8 text-center flex flex-col items-center gap-5">
+      <section className="max-w-6xl mx-auto px-4 pt-12 md:pt-20 pb-6 text-center flex flex-col items-center gap-5">
         <span className="text-xs tracking-[0.4em] text-accent font-bold uppercase">
           The Celebrity Look-Alike App of 2026
         </span>
@@ -32,9 +67,21 @@ export default function Page() {
           <span className="text-primary">DO YOU LOOK LIKE</span>?
         </h1>
         <p className="text-muted-foreground text-base md:text-lg max-w-xl text-pretty">
-          Drop a selfie. Our AI scans your features, vibe, and energy — then matches you to the celebrity twin you
+          Drop a selfie. Our AI scans your features against{" "}
+          <span className="text-foreground font-bold">{CELEBS.length}+ real celebrities</span> and finds the twin you
           didn&apos;t know you had.
         </p>
+      </section>
+
+      {/* Marquee of famous names */}
+      <section className="border-y border-border bg-card overflow-hidden mb-10">
+        <div className="flex gap-8 py-4 animate-[marquee_40s_linear_infinite] whitespace-nowrap">
+          {[...featured, ...featured].map((name, i) => (
+            <span key={i} className="font-display text-lg tracking-wider text-muted-foreground">
+              {name.toUpperCase()} <span className="text-primary mx-2">★</span>
+            </span>
+          ))}
+        </div>
       </section>
 
       {/* Matcher */}
@@ -42,35 +89,24 @@ export default function Page() {
         <StarMatcher />
       </section>
 
-      {/* Celeb pool */}
+      {/* Pool of stars by category */}
       <section className="max-w-6xl mx-auto px-4 pb-20">
-        <div className="flex items-end justify-between mb-6">
+        <div className="flex items-end justify-between mb-6 flex-wrap gap-2">
           <div>
             <h2 className="font-display text-3xl md:text-4xl tracking-tight">THE LINEUP</h2>
-            <p className="text-sm text-muted-foreground mt-1">10 icons in the pool. Who&apos;s your match?</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {CELEBS.length} icons across {categories.length} vibes. Who&apos;s your match?
+            </p>
           </div>
-          <span className="text-xs tracking-widest text-muted-foreground uppercase hidden sm:block">
-            {CELEBS.length} stars
-          </span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {CELEBS.map((c) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {categories.map(([cat, count]) => (
             <div
-              key={c.id}
-              className="group relative rounded-2xl overflow-hidden border border-border bg-card aspect-[3/4]"
+              key={cat}
+              className="rounded-2xl bg-card border border-border p-4 hover:border-primary/60 transition-colors flex flex-col gap-1"
             >
-              <Image
-                src={c.image || "/placeholder.svg"}
-                alt={c.name}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-              <div className="absolute bottom-0 inset-x-0 p-3">
-                <div className="font-display text-sm md:text-base leading-tight">{c.name.toUpperCase()}</div>
-                <div className="text-[10px] tracking-wider uppercase text-muted-foreground line-clamp-1">{c.vibe}</div>
-              </div>
+              <span className="font-display text-2xl text-primary leading-none">{count}</span>
+              <span className="text-xs tracking-widest uppercase text-foreground">{cat}</span>
             </div>
           ))}
         </div>
@@ -78,7 +114,7 @@ export default function Page() {
 
       <footer className="border-t border-border">
         <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-          <span>STARMATCH &copy; 2026 — Just for fun, not a real identity match.</span>
+          <span>STARMATCH &copy; 2026 — Just for fun. Photos via Wikipedia.</span>
           <span className="tracking-widest uppercase">Powered by AI Vision</span>
         </div>
       </footer>

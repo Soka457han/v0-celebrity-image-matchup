@@ -3,15 +3,22 @@
 import type React from "react"
 
 import { useRef, useState } from "react"
-import Image from "next/image"
-import { Upload, Sparkles, RotateCcw, Loader2, Camera } from "lucide-react"
-import type { Celeb } from "@/lib/celebs"
+import { Upload, Sparkles, RotateCcw, Loader2, Camera, ExternalLink } from "lucide-react"
+
+type MatchedCeleb = {
+  id: string
+  name: string
+  category: string
+  image: string | null
+  description: string | null
+}
 
 type MatchResult = {
-  celeb: Celeb
+  celeb: MatchedCeleb
   matchPercent: number
   reasoning: string
   features: string[]
+  vibe: string
 }
 
 type Stage = "idle" | "preview" | "loading" | "result" | "error"
@@ -174,7 +181,7 @@ export function StarMatcher() {
             <span className="font-display text-2xl md:text-3xl tracking-wide">SCANNING THE STARS...</span>
           </div>
           <div className="flex flex-wrap gap-2 justify-center max-w-md">
-            {["analyzing features", "matching vibes", "consulting the timeline"].map((t) => (
+            {["analyzing features", "scanning 500+ celebs", "finding your twin"].map((t) => (
               <span
                 key={t}
                 className="text-xs uppercase tracking-wider px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground"
@@ -190,7 +197,7 @@ export function StarMatcher() {
         <div className="flex flex-col gap-6">
           <div className="flex flex-col items-center text-center gap-2">
             <span className="text-xs tracking-[0.3em] text-accent font-bold uppercase">Match Confirmed</span>
-            <h2 className="font-display text-5xl md:text-7xl tracking-tight">
+            <h2 className="font-display text-5xl md:text-7xl tracking-tight text-balance">
               YOU GIVE <span className="text-primary">{result.celeb.name.toUpperCase()}</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl text-pretty">{result.reasoning}</p>
@@ -219,7 +226,7 @@ export function StarMatcher() {
               </div>
             </div>
 
-            {/* Match badge (center on desktop, top on mobile) */}
+            {/* Match badge */}
             <div className="flex md:flex-col items-center justify-center gap-2 py-4 md:py-0">
               <div className="relative">
                 <div className="absolute inset-0 bg-accent/40 blur-2xl rounded-full" />
@@ -233,21 +240,44 @@ export function StarMatcher() {
 
             {/* Celeb */}
             <div className="rounded-3xl overflow-hidden border border-border bg-card">
-              <div className="relative aspect-[3/4]">
-                <Image
-                  src={result.celeb.image || "/placeholder.svg"}
-                  alt={result.celeb.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
+              <div className="relative aspect-[3/4] bg-secondary">
+                {result.celeb.image ? (
+                  // Wikipedia provides photos; using <img> avoids next/image domain config.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={result.celeb.image || "/placeholder.svg"}
+                    alt={result.celeb.name}
+                    className="w-full h-full object-cover"
+                    crossOrigin="anonymous"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
+                    No photo available
+                  </div>
+                )}
                 <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider">
                   Your Twin
                 </div>
               </div>
-              <div className="p-4 flex flex-col gap-1">
-                <h3 className="font-display text-2xl">{result.celeb.name.toUpperCase()}</h3>
-                <p className="text-sm text-muted-foreground">{result.celeb.vibe}</p>
+              <div className="p-4 flex flex-col gap-2">
+                <div className="flex items-baseline justify-between gap-2">
+                  <h3 className="font-display text-2xl truncate">{result.celeb.name.toUpperCase()}</h3>
+                  <span className="text-[10px] tracking-widest uppercase text-muted-foreground shrink-0">
+                    {result.celeb.category}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground capitalize">{result.vibe}</p>
+                {result.celeb.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{result.celeb.description}</p>
+                )}
+                <a
+                  href={`https://en.wikipedia.org/wiki/${result.celeb.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+                >
+                  Read more <ExternalLink className="size-3" />
+                </a>
               </div>
             </div>
           </div>
