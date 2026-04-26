@@ -15,8 +15,8 @@ const anton = Anton({
 })
 
 export const metadata: Metadata = {
-  title: 'CELEB CLASH — Who Wins?',
-  description: 'The trendiest celebrity head-to-head. Pick your fave, settle the debate.',
+  title: 'STARMATCH — Find Your Celebrity Twin',
+  description: 'Upload a selfie and discover which celebrity you give the energy of. AI-powered, just for fun.',
   generator: 'v0.app',
 }
 
