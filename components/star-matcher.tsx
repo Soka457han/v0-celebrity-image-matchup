@@ -207,7 +207,7 @@ export function StarMatcher() {
             <span className="font-display text-2xl md:text-3xl tracking-wide">SCANNING THE STARS...</span>
           </div>
           <div className="flex flex-wrap gap-2 justify-center max-w-md">
-            {["analyzing features", "scanning 500+ celebs", "finding your twin"].map((t) => (
+            {["analyzing features", "scanning 1000+ celebs", "finding your twin"].map((t) => (
               <span
                 key={t}
                 className="text-xs uppercase tracking-wider px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground"
