@@ -28,6 +28,7 @@ type Stage = "idle" | "preview" | "loading" | "result" | "error"
 export function StarMatcher() {
   const inputRef = useRef<HTMLInputElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const exportRef = useRef<HTMLDivElement>(null)
   const [stage, setStage] = useState<Stage>("idle")
   const [userImage, setUserImage] = useState<string | null>(null)
   const [result, setResult] = useState<MatchResult | null>(null)
@@ -42,17 +43,22 @@ export function StarMatcher() {
   const displayed = activeView === "other" && otherResult ? otherResult : result
 
   const downloadCard = async () => {
-    if (!cardRef.current || !displayed) return
+    // Always screenshot the offscreen desktop-sized export card so the
+    // downloaded image looks identical regardless of the user's device.
+    const node = exportRef.current
+    if (!node || !displayed) return
     setDownloading(true)
     try {
-      const dataUrl = await toPng(cardRef.current, {
+      const dataUrl = await toPng(node, {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: "#0a0a0a",
+        width: 720,
+        height: node.offsetHeight,
       })
       const link = document.createElement("a")
       const safeName = displayed.celeb.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")
-      link.download = `starmatch-${safeName}.png`
+      link.download = `celebmatch-${safeName}.png`
       link.href = dataUrl
       link.click()
     } catch (err) {
@@ -408,6 +414,115 @@ export function StarMatcher() {
               <span className="capitalize text-accent font-bold tracking-wider truncate ml-2">
                 {displayed.vibe}
               </span>
+            </div>
+          </div>
+
+          {/* OFFSCREEN EXPORT CARD — fixed desktop sizing so the downloaded image
+              looks the same on every device. Hidden from view but reachable to html-to-image. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none fixed -left-[10000px] top-0 select-none"
+            style={{ width: 720 }}
+          >
+            <div
+              ref={exportRef}
+              className="relative rounded-3xl overflow-hidden border border-border bg-card"
+              style={{ width: 720 }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 pt-5 pb-3">
+                <span className="font-display text-xl tracking-tight">
+                  CELEB<span className="text-primary">MATCH</span>
+                </span>
+                <span className="text-[11px] tracking-[0.3em] text-accent font-bold uppercase">
+                  {activeView === "other" && displayed
+                    ? `${displayed.gender === "M" ? "Male" : "Female"} pick`
+                    : "Match Confirmed"}
+                </span>
+              </div>
+
+              {/* Headline */}
+              <div className="px-6 pb-5 text-center">
+                <p className="text-xs tracking-[0.3em] uppercase text-muted-foreground mb-1">You give</p>
+                <h2 className="font-display text-6xl tracking-tight text-primary text-balance leading-[0.95]">
+                  {displayed?.celeb.name.toUpperCase()}
+                </h2>
+                <p className="text-xs tracking-widest uppercase text-muted-foreground mt-2">
+                  {displayed?.celeb.category} energy
+                </p>
+              </div>
+
+              {/* Two-up photos with centered badge */}
+              <div className="relative px-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="relative rounded-2xl overflow-hidden border border-border bg-secondary">
+                    <div className="relative aspect-[4/5]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={userImage || "/placeholder.svg"}
+                        alt="You"
+                        className="w-full h-full object-cover object-top"
+                      />
+                    </div>
+                  </div>
+                  <div className="relative rounded-2xl overflow-hidden border border-primary/40 bg-secondary">
+                    <div className="relative aspect-[4/5]">
+                      {displayed?.celeb.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={displayed.celeb.image || "/placeholder.svg"}
+                          alt={displayed.celeb.name}
+                          className="w-full h-full object-cover object-top"
+                          crossOrigin="anonymous"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm px-2 text-center">
+                          No photo available
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-accent/50 blur-2xl rounded-full" />
+                    <div className="relative size-28 rounded-full bg-accent text-accent-foreground flex flex-col items-center justify-center font-display border-4 border-card shadow-xl">
+                      <span className="text-4xl leading-none">{displayed?.matchPercent}</span>
+                      <span className="text-[10px] tracking-[0.2em] mt-1">PERCENT</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reasoning + features */}
+              <div className="px-6 pt-5 pb-5">
+                <p className="text-base text-foreground/90 text-pretty text-center leading-relaxed">
+                  {displayed?.reasoning}
+                </p>
+                {displayed && displayed.features.length > 0 && (
+                  <div className="flex flex-wrap gap-2 justify-center mt-4">
+                    {displayed.features.slice(0, 6).map((f) => (
+                      <span
+                        key={f}
+                        className="text-xs px-3 py-1 rounded-full bg-secondary text-secondary-foreground capitalize"
+                      >
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="border-t border-border px-6 py-3 flex items-center justify-between text-xs">
+                <span className="font-display tracking-wider text-muted-foreground">
+                  CELEB<span className="text-primary">MATCH</span> · AI CELEBRITY MATCH
+                </span>
+                <span className="capitalize text-accent font-bold tracking-wider truncate ml-2">
+                  {displayed?.vibe}
+                </span>
+              </div>
             </div>
           </div>
 
