@@ -60,9 +60,8 @@ export default function Page() {
           <span className="text-primary">DO YOU LOOK LIKE</span>?
         </h1>
         <p className="text-muted-foreground text-base md:text-lg max-w-xl text-pretty">
-          Drop a selfie. Our AI scans your features against{" "}
-          <span className="text-foreground font-bold">{CELEBS.length}+ real celebrities</span> and finds the twin you
-          didn&apos;t know you had.
+          Drop a selfie. AI will scan your features against{" "}
+          <span className="text-foreground font-bold">1000+ real celebrities</span> and find your best match.
         </p>
       </section>
 
