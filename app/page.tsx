@@ -1,5 +1,4 @@
 import { StarMatcher } from "@/components/star-matcher"
-import { CELEBS } from "@/lib/celebs"
 
 export default function Page() {
   // Pick a handful of well-known names to flash as a "featured" marquee
@@ -41,9 +40,6 @@ export default function Page() {
             <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
               <span className="size-1.5 rounded-full bg-accent animate-pulse" />
               AI Powered
-            </div>
-            <div className="text-xs uppercase tracking-widest text-foreground font-bold">
-              {CELEBS.length}+ stars
             </div>
           </div>
         </div>
