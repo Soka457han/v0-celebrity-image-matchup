@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { createGlobe } from "cobe"
+import cobe from "cobe"
 
 interface GlobeAnimationProps {
   latitude?: number
@@ -34,7 +34,7 @@ export function GlobeAnimation({
     let currentTheta = 0
     let animationFrameId: number
 
-    const globe = createGlobe(canvasRef.current, {
+    const globe = cobe({
       devicePixelRatio: 2,
       width: canvasRef.current.clientWidth * 2,
       height: canvasRef.current.clientHeight * 2,
