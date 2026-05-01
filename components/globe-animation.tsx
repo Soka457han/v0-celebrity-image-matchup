@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import cobe from "cobe"
+import { useEffect, useRef } from "react"
 
 interface GlobeAnimationProps {
   latitude?: number
@@ -17,112 +16,143 @@ export function GlobeAnimation({
   autoRotate = true,
 }: GlobeAnimationProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const globeRef = useRef<any>(null)
-  const [isReady, setIsReady] = useState(false)
+  const animationRef = useRef<number>()
+  const rotationRef = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
-    console.log("[v0] globe props:", { latitude, longitude, celebName })
-    if (!canvasRef.current || !containerRef.current) {
-      console.log("[v0] canvas or container ref missing")
-      return
-    }
+    const canvas = canvasRef.current
+    if (!canvas) return
 
-    // Get container dimensions
-    const width = containerRef.current.clientWidth
-    const height = containerRef.current.clientHeight
-    console.log("[v0] globe dimensions:", width, height)
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
 
-    if (width === 0 || height === 0) {
-      console.log("[v0] container has no dimensions yet")
-      return
-    }
+    const width = canvas.width
+    const height = canvas.height
+    const centerX = width / 2
+    const centerY = height / 2
+    const radius = Math.min(width, height) / 2 - 20
 
-    // Convert lat/lng to phi/theta
-    const phi = Math.PI / 2 - (latitude * Math.PI) / 180
-    const theta = (longitude * Math.PI) / 180
+    // Convert lat/lng to rotation target
+    const targetRotX = (latitude * Math.PI) / 180
+    const targetRotY = (longitude * Math.PI) / 180
 
-    let currentPhi = Math.PI
-    let currentTheta = 0.3
+    let currentRotX = Math.PI / 2
+    let currentRotY = 0
 
-    try {
-      const globe = cobe({
-        canvas: canvasRef.current,
-        devicePixelRatio: 2,
-        width: width * 2,
-        height: height * 2,
-        phi: currentPhi,
-        theta: currentTheta,
-        dark: 1,
-        diffuse: 1.2,
-        scale: 1,
-        atmosphere: true,
-        offset: [0, 0],
-        basColor: [0.35, 0.35, 0.35],
-        markerColor: [1, 0.73, 0],
-        glowColor: [1, 0.73, 0],
-        markers: [{ location: [latitude, longitude], size: 0.12 }],
-        onRender: (state: any) => {
-          const lerpSpeed = 0.06
-          currentPhi += (phi - currentPhi) * lerpSpeed
-          currentTheta += (theta - currentTheta) * lerpSpeed
+    const drawGlobe = () => {
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height)
 
-          if (autoRotate && Math.abs(phi - currentPhi) < 0.02) {
-            currentTheta += 0.0003
+      // Smoothly animate toward target rotation
+      const lerpSpeed = 0.05
+      currentRotX += (targetRotX - currentRotX) * lerpSpeed
+      currentRotY += (targetRotY - currentRotY) * lerpSpeed
+
+      // Auto-rotate when close to target
+      if (autoRotate && Math.abs(targetRotX - currentRotX) < 0.02) {
+        currentRotY += 0.003
+      }
+
+      // Draw globe sphere with gradient
+      const gradient = ctx.createRadialGradient(centerX - 10, centerY - 10, 0, centerX, centerY, radius)
+      gradient.addColorStop(0, "#4a5568")
+      gradient.addColorStop(0.5, "#2d3748")
+      gradient.addColorStop(1, "#1a202c")
+
+      ctx.fillStyle = gradient
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
+      ctx.fill()
+
+      // Draw some latitude/longitude lines for visual reference
+      ctx.strokeStyle = "#374151"
+      ctx.lineWidth = 0.5
+
+      // Latitude lines
+      for (let lat = -60; lat <= 60; lat += 30) {
+        ctx.beginPath()
+        for (let lng = -180; lng <= 180; lng += 10) {
+          const rad = (lat * Math.PI) / 180
+          const azm = (lng * Math.PI) / 180
+
+          const x = Math.cos(rad) * Math.cos(azm - currentRotY)
+          const y = Math.sin(rad - currentRotX)
+
+          if (Math.cos(rad) * Math.sin(azm - currentRotY) > 0) {
+            const px = centerX + x * radius
+            const py = centerY + y * radius
+
+            if (lng === -180) ctx.moveTo(px, py)
+            else ctx.lineTo(px, py)
           }
-
-          state.phi = currentPhi
-          state.theta = currentTheta
-        },
-      })
-
-      globeRef.current = globe
-      setIsReady(true)
-      console.log("[v0] globe initialized successfully")
-
-      const handleResize = () => {
-        if (!containerRef.current || !globeRef.current) return
-        const w = containerRef.current.clientWidth
-        const h = containerRef.current.clientHeight
-        globeRef.current.resize(w * 2, h * 2)
-      }
-
-      window.addEventListener("resize", handleResize)
-      return () => {
-        window.removeEventListener("resize", handleResize)
-        if (globeRef.current) {
-          globeRef.current.destroy()
         }
+        ctx.stroke()
       }
-    } catch (err) {
-      console.log("[v0] globe error:", err)
+
+      // Draw marker for the celeb's location
+      const radLat = (latitude * Math.PI) / 180
+      const radLng = (longitude * Math.PI) / 180
+
+      const markerX = Math.cos(radLat) * Math.cos(radLng - currentRotY)
+      const markerY = Math.sin(radLat - currentRotX)
+      const markerZ = Math.cos(radLat) * Math.sin(radLng - currentRotY)
+
+      // Only draw if on visible side of globe
+      if (markerZ > 0) {
+        const px = centerX + markerX * radius
+        const py = centerY + markerY * radius
+
+        // Golden glow
+        const glowGradient = ctx.createRadialGradient(px, py, 0, px, py, 12)
+        glowGradient.addColorStop(0, "rgba(255, 200, 0, 0.6)")
+        glowGradient.addColorStop(1, "rgba(255, 200, 0, 0)")
+        ctx.fillStyle = glowGradient
+        ctx.beginPath()
+        ctx.arc(px, py, 12, 0, Math.PI * 2)
+        ctx.fill()
+
+        // Golden dot
+        ctx.fillStyle = "#ffc800"
+        ctx.beginPath()
+        ctx.arc(px, py, 5, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      // Draw outline
+      ctx.strokeStyle = "#ec4899"
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
+      ctx.stroke()
+
+      animationRef.current = requestAnimationFrame(drawGlobe)
+    }
+
+    drawGlobe()
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+      }
     }
   }, [latitude, longitude, autoRotate])
 
   return (
     <div className="w-full flex flex-col items-center gap-3">
-      <div
-        ref={containerRef}
-        className="relative w-full max-w-sm aspect-square rounded-2xl overflow-hidden border border-primary/30 bg-background"
-        style={{ minHeight: "280px" }}
-      >
+      <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border border-primary/40 bg-background">
         <canvas
           ref={canvasRef}
+          width={300}
+          height={300}
           style={{
             width: "100%",
-            height: "100%",
+            height: "auto",
             display: "block",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent pointer-events-none" />
-        {!isReady && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-xs text-muted-foreground">Loading globe...</div>
-          </div>
-        )}
       </div>
       <div className="text-center text-sm">
-        <p className="text-muted-foreground">Matched from</p>
+        <p className="text-muted-foreground">From</p>
         <p className="font-display text-base text-primary capitalize">{celebName}</p>
       </div>
     </div>

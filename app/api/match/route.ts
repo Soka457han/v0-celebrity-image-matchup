@@ -349,7 +349,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.log("[v0] top-level error:", err instanceof Error ? err.message : String(err))
     const celeb = pickRandomCelebOfGender("M")
-    const { image: celebImage, description } = await fetchWikiPhoto(celeb.id)
+    const { image: celebImage, description, lat, lng, country } = await fetchWikiPhoto(celeb.id)
     return Response.json({
       celeb: {
         id: celeb.id,
@@ -363,6 +363,7 @@ export async function POST(req: Request) {
       reasoning: `you're giving major ${celeb.name} energy`,
       features: ["mysterious", "iconic", "main character"],
       vibe: "iconic energy",
+      location: { lat, lng, country },
     })
   }
 }
