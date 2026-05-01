@@ -22,6 +22,7 @@ export function GlobeAnimation({
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
+    console.log("[v0] globe props:", { latitude, longitude, celebName })
     if (!canvasRef.current || !containerRef.current) {
       console.log("[v0] canvas or container ref missing")
       return
