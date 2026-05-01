@@ -5,6 +5,7 @@ import type React from "react"
 import { useRef, useState } from "react"
 import { Upload, Sparkles, RotateCcw, Loader2, Camera, ExternalLink, Download, Users } from "lucide-react"
 import { toBlob } from "html-to-image"
+import { GlobeAnimation } from "./globe-animation"
 
 type MatchedCeleb = {
   id: string
@@ -21,6 +22,7 @@ type MatchResult = {
   reasoning: string
   features: string[]
   vibe: string
+  location?: { lat?: number; lng?: number; country?: string }
 }
 
 type Stage = "idle" | "preview" | "loading" | "result" | "error"
@@ -369,6 +371,18 @@ export function StarMatcher() {
                 {displayed.celeb.category} energy
               </p>
             </div>
+
+            {/* Globe showing celeb's birthplace */}
+            {displayed.location?.lat !== undefined && displayed.location?.lng !== undefined && (
+              <div className="px-4 sm:px-6 pb-4 flex justify-center">
+                <GlobeAnimation
+                  latitude={displayed.location.lat}
+                  longitude={displayed.location.lng}
+                  celebName={displayed.celeb.name}
+                  autoRotate={true}
+                />
+              </div>
+            )}
 
             {/* Two-up photos — ALWAYS side-by-side, even on small screens */}
             <div className="relative px-3 sm:px-6">

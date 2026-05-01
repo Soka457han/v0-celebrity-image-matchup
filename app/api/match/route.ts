@@ -12,6 +12,29 @@ type GroqMatch = {
   vibe?: string
 }
 
+// Country → approximate center coordinates for globe animation
+const COUNTRY_COORDS: Record<string, { lat: number; lng: number }> = {
+  USA: { lat: 37.0, lng: -95.0 },
+  UK: { lat: 54.5, lng: -3.0 },
+  Canada: { lat: 56.0, lng: -106.0 },
+  India: { lat: 20.0, lng: 78.0 },
+  France: { lat: 46.0, lng: 2.0 },
+  Germany: { lat: 51.0, lng: 10.0 },
+  Brazil: { lat: -10.0, lng: -55.0 },
+  Japan: { lat: 35.0, lng: 138.0 },
+  Australia: { lat: -25.0, lng: 133.0 },
+  Mexico: { lat: 23.0, lng: -102.0 },
+  Spain: { lat: 40.0, lng: -4.0 },
+  Italy: { lat: 42.0, lng: 12.0 },
+  China: { lat: 35.0, lng: 105.0 },
+  Russia: { lat: 60.0, lng: 105.0 },
+  "South Korea": { lat: 37.0, lng: 127.0 },
+  Thailand: { lat: 15.0, lng: 101.0 },
+  Philippines: { lat: 12.0, lng: 122.0 },
+  Sweden: { lat: 62.0, lng: 15.0 },
+  Australia: { lat: -25.0, lng: 133.0 },
+}
+
 async function urlToDataUrl(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
@@ -28,7 +51,14 @@ async function urlToDataUrl(url: string): Promise<string | null> {
   }
 }
 
-async function fetchWikiPhoto(slug: string): Promise<{ image: string | null; description: string | null }> {
+async function fetchWikiPhoto(slug: string): Promise<{
+  image: string | null
+  description: string | null
+  birthplace?: string
+  country?: string
+  lat?: number
+  lng?: number
+}> {
   try {
     const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(slug)}`, {
       headers: { "User-Agent": "StarMatch/1.0 (celebrity-match-app)" },
@@ -39,13 +69,35 @@ async function fetchWikiPhoto(slug: string): Promise<{ image: string | null; des
       thumbnail?: { source?: string }
       originalimage?: { source?: string }
       description?: string
+      extract?: string
     }
     const remoteUrl = data.thumbnail?.source || data.originalimage?.source || null
     if (!remoteUrl) return { image: null, description: data.description || null }
     const dataUrl = await urlToDataUrl(remoteUrl)
+
+    // Extract birthplace from description or extract (simple heuristic).
+    // Wikipedia descriptions often end with "born in [place]" or similar.
+    let birthplace = ""
+    let country = ""
+    const desc = data.description || data.extract || ""
+    const birthMatch = desc.match(/born[^,]*?in\s+([^,\.\)]+)/i)
+    if (birthMatch?.[1]) {
+      birthplace = birthMatch[1].trim()
+      // Try to extract just the country (last part after last comma)
+      const parts = birthplace.split(",")
+      country = parts[parts.length - 1].trim()
+    }
+
+    // Look up coordinates for this country
+    const coords = country ? COUNTRY_COORDS[country] || COUNTRY_COORDS[Object.keys(COUNTRY_COORDS)[0]] : undefined
+
     return {
       image: dataUrl || remoteUrl,
       description: data.description || null,
+      birthplace,
+      country,
+      lat: coords?.lat,
+      lng: coords?.lng,
     }
   } catch {
     return { image: null, description: null }
@@ -254,7 +306,7 @@ export async function POST(req: Request) {
       celeb = pickRandomCelebOfGender(targetGender, excludeId)
     }
 
-    let { image: celebImage, description } = await fetchWikiPhoto(celeb.id)
+    let { image: celebImage, description, lat, lng, country } = await fetchWikiPhoto(celeb.id)
 
     if (!celebImage) {
       const alternates: Celeb[] = CELEBS.filter(
@@ -268,6 +320,9 @@ export async function POST(req: Request) {
           celeb = alt
           celebImage = data.image
           description = data.description
+          lat = data.lat
+          lng = data.lng
+          country = data.country
           break
         }
       }
@@ -289,6 +344,7 @@ export async function POST(req: Request) {
           ? match.features.slice(0, 5)
           : ["unique vibe", "main character", "iconic"],
       vibe: match.vibe || "iconic energy",
+      location: { lat, lng, country },
     })
   } catch (err) {
     console.log("[v0] top-level error:", err instanceof Error ? err.message : String(err))
