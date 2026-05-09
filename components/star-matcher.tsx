@@ -208,10 +208,12 @@ export function StarMatcher() {
       }
 
       const data = (await res.json()) as MatchResult
+      console.log("[v0] match result received:", data)
       setResult(data)
       
       // Show globe modal with location data
-      if (data.location?.lat !== undefined && data.location?.lng !== undefined) {
+      if (data.location && data.location.lat !== undefined && data.location.lng !== undefined) {
+        console.log("[v0] showing globe modal with location:", data.location)
         setGlobeData({
           celebName: data.celeb.name,
           latitude: data.location.lat,
@@ -221,10 +223,12 @@ export function StarMatcher() {
         setShowGlobeModal(true)
         // Close modal and show results after animation (globe fades after ~4.5s)
         setTimeout(() => {
+          console.log("[v0] fading out globe modal")
           setShowGlobeModal(false)
           setStage("result")
         }, 4500)
       } else {
+        console.log("[v0] no location data, skipping globe modal")
         setStage("result")
       }
     } catch (err) {

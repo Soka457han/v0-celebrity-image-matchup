@@ -25,10 +25,12 @@ export function GlobeModal({
   const [opacity, setOpacity] = useState(1)
 
   useEffect(() => {
-    if (!isOpen || !canvasRef.current) return
+    if (!isOpen || !canvasRef.current) {
+      console.log("[v0] globe modal - not opening or no canvas")
+      return
+    }
 
-    // Reset opacity when opening
-    setOpacity(1)
+    console.log("[v0] globe modal - initializing with location:", { latitude, longitude })
 
     let currentPhi = Math.PI * 1.5
     let currentTheta = 0
@@ -63,10 +65,15 @@ export function GlobeModal({
           // Check if arrived
           if (!hasArrived && Math.abs(phi - currentPhi) < 0.02 && Math.abs(theta - currentTheta) < 0.02) {
             hasArrived = true
+            console.log("[v0] globe arrived at destination")
             // Start fade out after 2 seconds at destination
             setTimeout(() => {
+              console.log("[v0] starting globe fade")
               setOpacity(0)
-              setTimeout(() => onFadeComplete?.(), 500)
+              setTimeout(() => {
+                console.log("[v0] globe fade complete")
+                onFadeComplete?.()
+              }, 500)
             }, 2000)
           }
 
@@ -75,6 +82,7 @@ export function GlobeModal({
         },
       })
 
+      console.log("[v0] globe created successfully")
       globeRef.current = globe
 
       const handleResize = () => {
@@ -95,7 +103,10 @@ export function GlobeModal({
     }
   }, [isOpen, latitude, longitude, onFadeComplete])
 
-  if (!isOpen) return null
+  if (!isOpen) {
+    console.log("[v0] globe modal closed")
+    return null
+  }
 
   return (
     <div
@@ -103,8 +114,14 @@ export function GlobeModal({
       style={{ opacity }}
     >
       <div className="relative flex flex-col items-center gap-4">
-        {/* Globe Canvas */}
-        <canvas ref={canvasRef} className="rounded-2xl" style={{ width: 400, height: 400 }} />
+        {/* Globe Canvas - must be direct child of div for cobe to work */}
+        <canvas
+          ref={canvasRef}
+          className="rounded-2xl"
+          width={800}
+          height={800}
+          style={{ width: "400px", height: "400px", display: "block" }}
+        />
 
         {/* Celebrity Info Popup on Globe */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
