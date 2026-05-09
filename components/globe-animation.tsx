@@ -1,173 +1,131 @@
-"use client"
+'use client'
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from 'react'
+import createGlobe from 'cobe'
 
 interface GlobeAnimationProps {
   latitude?: number
   longitude?: number
   celebName?: string
-  autoRotate?: boolean
 }
 
 export function GlobeAnimation({
-  latitude = 20,
+  latitude = 0,
   longitude = 0,
-  celebName = "Your Match",
-  autoRotate = true,
+  celebName = 'Your Match',
 }: GlobeAnimationProps) {
-  const [rotation, setRotation] = useState({ x: 0, y: 0 })
-  const animationRef = useRef<number>()
-  const stateRef = useRef({ currentX: 0, currentY: 0 })
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const globeRef = useRef<any>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
-    // Target rotation based on lat/lng
-    const targetX = -(latitude * Math.PI) / 180 // Negative for correct vertical spin
-    const targetY = (longitude * Math.PI) / 180
+    if (!canvasRef.current) return
 
-    let autoRotateAngle = 0
-    let hasArrived = false
+    // Convert lat/lng to phi/theta for cobe
+    const phi = Math.PI / 2 - (latitude * Math.PI) / 180
+    const theta = (longitude * Math.PI) / 180
 
-    const animate = () => {
-      const state = stateRef.current
+    let currentPhi = 0
+    let currentTheta = 0
+    let targetPhi = phi
+    let targetTheta = theta
 
-      // Lerp toward target
-      const lerpSpeed = 0.08
-      state.currentX += (targetX - state.currentX) * lerpSpeed
-      state.currentY += (targetY - state.currentY) * lerpSpeed
-
-      // Check if arrived at target
-      const distX = Math.abs(targetX - state.currentX)
-      const distY = Math.abs(targetY - state.currentY)
-      
-      if (distX < 0.02 && distY < 0.02) {
-        hasArrived = true
-      }
-
-      // Auto-rotate when arrived
-      if (autoRotate && hasArrived) {
-        autoRotateAngle += 0.002
-        state.currentY = targetY + autoRotateAngle
-      }
-
-      setRotation({
-        x: state.currentX,
-        y: state.currentY,
+    try {
+      const globe = createGlobe(canvasRef.current, {
+        devicePixelRatio: 2,
+        width: 500,
+        height: 500,
+        phi: currentPhi,
+        theta: currentTheta,
+        dark: 1,
+        diffuse: 1.2,
+        scale: 1,
+        atmosphere: true,
+        baseColor: [0.2, 0.2, 0.25],
+        markerColor: [1, 0.73, 0.1],
+        glowColor: [1, 0.73, 0.1],
+        markers: [{ location: [latitude, longitude], size: 0.12 }],
+        mapBrightness: 1.2,
+        mapBaseBrightness: 0.3,
       })
 
-      animationRef.current = requestAnimationFrame(animate)
-    }
+      globeRef.current = globe
+      setIsInitialized(true)
 
-    animationRef.current = requestAnimationFrame(animate)
+      // Animation loop
+      let frameId: number
+      let autoRotateAngle = 0
 
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
+      const animate = () => {
+        // Smooth lerp to target location
+        const lerpSpeed = 0.05
+        currentPhi += (targetPhi - currentPhi) * lerpSpeed
+        currentTheta += (targetTheta - currentTheta) * lerpSpeed
+
+        // Auto-rotate after arriving
+        const distToPhi = Math.abs(targetPhi - currentPhi)
+        const distToTheta = Math.abs(targetTheta - currentTheta)
+
+        if (distToPhi < 0.01 && distToTheta < 0.01) {
+          autoRotateAngle += 0.0005
+          currentTheta = targetTheta + autoRotateAngle
+        }
+
+        globe.update({
+          phi: currentPhi,
+          theta: currentTheta,
+        })
+
+        frameId = requestAnimationFrame(animate)
       }
-    }
-  }, [latitude, longitude, autoRotate, celebName])
 
-  // Create perspective transform for globe
-  const rotX = rotation.x
-  const rotY = rotation.y
+      frameId = requestAnimationFrame(animate)
+
+      // Handle window resize
+      const handleResize = () => {
+        if (canvasRef.current && globeRef.current) {
+          const rect = canvasRef.current.parentElement?.getBoundingClientRect()
+          if (rect) {
+            globe.update({
+              width: Math.min(500, rect.width * 2),
+              height: Math.min(500, rect.height * 2),
+            })
+          }
+        }
+      }
+
+      window.addEventListener('resize', handleResize)
+
+      return () => {
+        cancelAnimationFrame(frameId)
+        window.removeEventListener('resize', handleResize)
+        globe.destroy()
+      }
+    } catch (err) {
+      console.error('[v0] Globe error:', err)
+    }
+  }, [latitude, longitude])
 
   return (
     <div className="w-full flex flex-col items-center gap-3">
-      <div className="relative w-full max-w-sm aspect-square rounded-2xl overflow-hidden border-2 border-primary/40 bg-gradient-to-br from-background to-background/50 flex items-center justify-center perspective">
-        {/* SVG Globe */}
-        <svg
-          width="280"
-          height="280"
-          viewBox="0 0 280 280"
-          className="drop-shadow-lg"
+      <div className="relative w-full max-w-sm aspect-square rounded-2xl overflow-hidden border border-primary/30 bg-background/50">
+        <canvas
+          ref={canvasRef}
           style={{
-            transform: `rotateX(${rotX * 57.3}deg) rotateY(${rotY * 57.3}deg)`,
-            transformStyle: "preserve-3d",
-            transition: "transform 0.05s ease-out",
+            width: '100%',
+            height: '100%',
+            display: 'block',
           }}
-        >
-          {/* Background gradient */}
-          <defs>
-            <radialGradient id="globeGradient" cx="35%" cy="35%">
-              <stop offset="0%" stopColor="#4a5568" />
-              <stop offset="50%" stopColor="#2d3748" />
-              <stop offset="100%" stopColor="#1a202c" />
-            </radialGradient>
-            <radialGradient id="markerGlow" cx="50%" cy="50%">
-              <stop offset="0%" stopColor="rgba(255, 200, 0, 0.8)" />
-              <stop offset="100%" stopColor="rgba(255, 200, 0, 0)" />
-            </radialGradient>
-          </defs>
-
-          {/* Globe sphere */}
-          <circle cx="140" cy="140" r="130" fill="url(#globeGradient)" stroke="#ec4899" strokeWidth="2" />
-
-          {/* Latitude lines */}
-          {[-60, -30, 0, 30, 60].map((lat) => (
-            <circle
-              key={`lat-${lat}`}
-              cx="140"
-              cy={140 - (lat * 130) / 90}
-              r={(130 * Math.cos((lat * Math.PI) / 180)) / 1.2}
-              fill="none"
-              stroke="#374151"
-              strokeWidth="0.5"
-              opacity="0.6"
-            />
-          ))}
-
-          {/* Longitude lines */}
-          {[-180, -90, 0, 90, 180].map((lng) => (
-            <line
-              key={`lng-${lng}`}
-              x1="140"
-              y1="10"
-              x2="140"
-              y2="270"
-              stroke="#374151"
-              strokeWidth="0.5"
-              opacity="0.4"
-              transform={`rotate(${lng} 140 140)`}
-            />
-          ))}
-
-          {/* Marker for location - circles to show it even through rotation */}
-          <g>
-            {/* Outer glow */}
-            <circle
-              cx="140"
-              cy="30"
-              r="12"
-              fill="rgba(255, 200, 0, 0.3)"
-              filter="blur(2px)"
-            />
-            {/* Golden marker */}
-            <circle
-              cx="140"
-              cy="30"
-              r="7"
-              fill="#ffc800"
-              stroke="#ffed4e"
-              strokeWidth="2"
-              filter="drop-shadow(0 0 4px #ffc800)"
-            />
-          </g>
-
-          {/* Shine effect */}
-          <ellipse
-            cx="105"
-            cy="105"
-            rx="45"
-            ry="45"
-            fill="white"
-            opacity="0.1"
-          />
-        </svg>
+        />
+        {!isInitialized && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <div className="text-xs text-muted-foreground">Initializing globe...</div>
+          </div>
+        )}
       </div>
-
-      {/* Location label */}
-      <div className="text-center text-sm">
-        <p className="text-muted-foreground text-xs">From</p>
-        <p className="font-display text-base text-primary capitalize">{celebName}</p>
+      <div className="text-center">
+        <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">From</p>
+        <p className="font-display text-sm sm:text-base text-primary capitalize">{celebName}</p>
       </div>
     </div>
   )
