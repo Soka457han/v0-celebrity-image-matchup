@@ -211,26 +211,22 @@ export function StarMatcher() {
       console.log("[v0] match result received:", data)
       setResult(data)
       
-      // Show globe modal with location data
-      if (data.location && data.location.lat !== undefined && data.location.lng !== undefined) {
-        console.log("[v0] showing globe modal with location:", data.location)
-        setGlobeData({
-          celebName: data.celeb.name,
-          latitude: data.location.lat,
-          longitude: data.location.lng,
-          celebImage: data.celeb.image || undefined,
-        })
-        setShowGlobeModal(true)
-        // Close modal and show results after animation (globe fades after ~4.5s)
-        setTimeout(() => {
-          console.log("[v0] fading out globe modal")
-          setShowGlobeModal(false)
-          setStage("result")
-        }, 4500)
-      } else {
-        console.log("[v0] no location data, skipping globe modal")
+      // Always show globe modal (location is now guaranteed by API)
+      console.log("[v0] showing globe modal with location:", data.location)
+      setGlobeData({
+        celebName: data.celeb.name,
+        latitude: data.location?.lat ?? 37.0,
+        longitude: data.location?.lng ?? -95.0,
+        celebImage: data.celeb.image || undefined,
+      })
+      setShowGlobeModal(true)
+      
+      // Close modal and show results after animation (globe fades after ~4.5s)
+      setTimeout(() => {
+        console.log("[v0] fading out globe modal")
+        setShowGlobeModal(false)
         setStage("result")
-      }
+      }, 4500)
     } catch (err) {
       console.log("[v0] match error:", err)
       setError(err instanceof Error ? err.message : "Something went wrong")

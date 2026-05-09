@@ -89,18 +89,20 @@ async function fetchWikiPhoto(slug: string): Promise<{
     }
 
     // Look up coordinates for this country
-    const coords = country ? COUNTRY_COORDS[country] || COUNTRY_COORDS[Object.keys(COUNTRY_COORDS)[0]] : undefined
+    const coords = country 
+      ? COUNTRY_COORDS[country] || { lat: 37.0, lng: -95.0 }  // Fallback to USA center
+      : { lat: 37.0, lng: -95.0 }  // Default to USA if no country
 
     return {
       image: dataUrl || remoteUrl,
       description: data.description || null,
       birthplace,
-      country,
-      lat: coords?.lat,
-      lng: coords?.lng,
+      country: country || "USA",
+      lat: coords.lat,
+      lng: coords.lng,
     }
   } catch {
-    return { image: null, description: null }
+    return { image: null, description: null, lat: 37.0, lng: -95.0 }
   }
 }
 
