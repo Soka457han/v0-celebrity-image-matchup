@@ -5,7 +5,7 @@ import type React from "react"
 import { useRef, useState } from "react"
 import { Upload, Sparkles, RotateCcw, Loader2, Camera, ExternalLink, Download, Users } from "lucide-react"
 import { toBlob } from "html-to-image"
-import { GlobeAnimation } from "./globe-animation"
+import { GlobeModal } from "./globe-modal"
 
 type MatchedCeleb = {
   id: string
@@ -40,6 +40,13 @@ export function StarMatcher() {
   const [error, setError] = useState<string | null>(null)
   const [dragActive, setDragActive] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [showGlobeModal, setShowGlobeModal] = useState(false)
+  const [globeData, setGlobeData] = useState<{
+    celebName: string
+    latitude: number
+    longitude: number
+    celebImage?: string
+  } | null>(null)
 
   // Whichever match is currently displayed
   const displayed = activeView === "other" && otherResult ? otherResult : result
@@ -202,7 +209,24 @@ export function StarMatcher() {
 
       const data = (await res.json()) as MatchResult
       setResult(data)
-      setStage("result")
+      
+      // Show globe modal with location data
+      if (data.location?.lat !== undefined && data.location?.lng !== undefined) {
+        setGlobeData({
+          celebName: data.celeb.name,
+          latitude: data.location.lat,
+          longitude: data.location.lng,
+          celebImage: data.celeb.image || undefined,
+        })
+        setShowGlobeModal(true)
+        // Close modal and show results after animation (globe fades after ~4.5s)
+        setTimeout(() => {
+          setShowGlobeModal(false)
+          setStage("result")
+        }, 4500)
+      } else {
+        setStage("result")
+      }
     } catch (err) {
       console.log("[v0] match error:", err)
       setError(err instanceof Error ? err.message : "Something went wrong")
@@ -314,6 +338,16 @@ export function StarMatcher() {
         </div>
       )}
 
+      {/* Globe Modal Overlay */}
+      <GlobeModal
+        isOpen={showGlobeModal}
+        celebName={globeData?.celebName || ""}
+        latitude={globeData?.latitude || 0}
+        longitude={globeData?.longitude || 0}
+        celebImage={globeData?.celebImage}
+        onFadeComplete={() => setShowGlobeModal(false)}
+      />
+
       {stage === "result" && displayed && userImage && (
         <div className="flex flex-col gap-5">
           {/* Toggle pills — only shown once both genders are loaded */}
@@ -371,18 +405,6 @@ export function StarMatcher() {
                 {displayed.celeb.category} energy
               </p>
             </div>
-
-            {/* Globe showing celeb's birthplace */}
-            {displayed && displayed.location && (
-              <div className="px-4 sm:px-6 pb-4 flex justify-center">
-                <GlobeAnimation
-                  latitude={displayed.location.lat ?? 0}
-                  longitude={displayed.location.lng ?? 0}
-                  celebName={displayed.celeb.name}
-                  autoRotate={true}
-                />
-              </div>
-            )}
 
             {/* Two-up photos — ALWAYS side-by-side, even on small screens */}
             <div className="relative px-3 sm:px-6">
