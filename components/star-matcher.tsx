@@ -373,11 +373,11 @@ export function StarMatcher() {
             </div>
 
             {/* Globe showing celeb's birthplace */}
-            {displayed.location?.lat !== undefined && displayed.location?.lng !== undefined && (
+            {displayed && displayed.location && (
               <div className="px-4 sm:px-6 pb-4 flex justify-center">
                 <GlobeAnimation
-                  latitude={displayed.location.lat}
-                  longitude={displayed.location.lng}
+                  latitude={displayed.location.lat ?? 0}
+                  longitude={displayed.location.lng ?? 0}
                   celebName={displayed.celeb.name}
                   autoRotate={true}
                 />
