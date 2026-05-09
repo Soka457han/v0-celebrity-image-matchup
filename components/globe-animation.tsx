@@ -21,22 +21,31 @@ export function GlobeAnimation({
 
   useEffect(() => {
     // Target rotation based on lat/lng
-    const targetX = (latitude * Math.PI) / 180
+    const targetX = -(latitude * Math.PI) / 180 // Negative for correct vertical spin
     const targetY = (longitude * Math.PI) / 180
 
     let autoRotateAngle = 0
+    let hasArrived = false
 
     const animate = () => {
       const state = stateRef.current
 
       // Lerp toward target
-      const lerpSpeed = 0.06
+      const lerpSpeed = 0.08
       state.currentX += (targetX - state.currentX) * lerpSpeed
       state.currentY += (targetY - state.currentY) * lerpSpeed
 
+      // Check if arrived at target
+      const distX = Math.abs(targetX - state.currentX)
+      const distY = Math.abs(targetY - state.currentY)
+      
+      if (distX < 0.02 && distY < 0.02) {
+        hasArrived = true
+      }
+
       // Auto-rotate when arrived
-      if (autoRotate && Math.abs(targetX - state.currentX) < 0.05) {
-        autoRotateAngle += 0.003
+      if (autoRotate && hasArrived) {
+        autoRotateAngle += 0.002
         state.currentY = targetY + autoRotateAngle
       }
 
@@ -55,7 +64,7 @@ export function GlobeAnimation({
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [latitude, longitude, autoRotate])
+  }, [latitude, longitude, autoRotate, celebName])
 
   // Create perspective transform for globe
   const rotX = rotation.x
@@ -121,21 +130,27 @@ export function GlobeAnimation({
             />
           ))}
 
-          {/* Marker for location */}
-          <circle
-            cx="140"
-            cy="20"
-            r="10"
-            fill="url(#markerGlow)"
-            transform={`rotate(${longitude * 57.3} 140 140)`}
-          />
-          <circle
-            cx="140"
-            cy="20"
-            r="5"
-            fill="#ffc800"
-            transform={`rotate(${longitude * 57.3} 140 140)`}
-          />
+          {/* Marker for location - circles to show it even through rotation */}
+          <g>
+            {/* Outer glow */}
+            <circle
+              cx="140"
+              cy="30"
+              r="12"
+              fill="rgba(255, 200, 0, 0.3)"
+              filter="blur(2px)"
+            />
+            {/* Golden marker */}
+            <circle
+              cx="140"
+              cy="30"
+              r="7"
+              fill="#ffc800"
+              stroke="#ffed4e"
+              strokeWidth="2"
+              filter="drop-shadow(0 0 4px #ffc800)"
+            />
+          </g>
 
           {/* Shine effect */}
           <ellipse
